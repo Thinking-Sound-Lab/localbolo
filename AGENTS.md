@@ -31,8 +31,9 @@ xcodebuild build -project LocalBolo.xcodeproj -scheme LocalBolo -configuration R
 
 **Open a pull request, then stop. Merging is the maintainer's decision.**
 
-- Don't merge a pull request, add it to the merge queue, enable auto-merge, approve it, or push
-  to `main`, unless the user explicitly tells you to merge that pull request.
+- Don't approve a pull request or push to `main`.
+- Don't merge a pull request, add it to the merge queue, or enable auto-merge unless the user
+  explicitly tells you to merge that pull request.
 - When you're told to merge, queue it with `gh pr merge <number>`. The merge queue runs the full
   check, including the Mac build, and merges the pull request only if it passes.
 - Keep pushes to a pull request purposeful: each push re-runs CI and restarts review.
