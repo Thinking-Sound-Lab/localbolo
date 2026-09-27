@@ -162,7 +162,8 @@ apps/
 │   │   └── UI/                   Pill, menu bar, onboarding and settings
 │   └── LocalBoloTests/
 └── web/                          Marketing site (Next.js 16, Tailwind CSS 4)
-.github/workflows/                CI for pull requests, and the release pipeline
+.github/workflows/                CI (quick checks on pull requests, full checks in the merge queue) and releases
+AGENTS.md                         How coding agents should check and merge their work
 docs/images/                      Screenshots for this README
 scripts/
 ├── generate-app-icon.swift       Draws the app icons for both apps
