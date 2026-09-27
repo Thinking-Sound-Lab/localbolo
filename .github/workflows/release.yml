@@ -1,0 +1,85 @@
+name: Release
+
+# Push a version tag to release, e.g.:  git tag v0.2.0 && git push origin v0.2.0
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # to publish the GitHub release
+
+jobs:
+  release:
+    name: Build, notarize and publish
+    runs-on: macos-26
+    timeout-minutes: 90
+    # The signing and notarization secrets live in this environment. It only
+    # accepts v* tags and waits for a maintainer's approval, and those rules are
+    # repository settings, so changing this file can't get around them.
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history, for the check below
+
+      - name: Check that the tag is on main
+        # Only release code that went through a reviewed pull request.
+        run: |
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME points to a commit that isn't on main."
+            exit 1
+          fi
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app
+
+      - name: Install the Metal Toolchain
+        run: |
+          xcodebuild -showComponent MetalToolchain | grep -q "Status: installed" \
+            || xcodebuild -downloadComponent MetalToolchain
+
+      - name: Import the Developer ID certificate
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/release.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          echo "$CERTIFICATE_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" -t cert -f pkcs12 -A
+          # Let codesign use the key without a confirmation dialog.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/certificate.p12"
+
+      - name: Save the notarization key
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: echo "$NOTARY_KEY_P8" > "$RUNNER_TEMP/notary-key.p8"
+
+      - name: Build, sign, notarize and package
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          NOTARY_KEY_PATH: ${{ runner.temp }}/notary-key.p8
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: scripts/release-mac.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/release/LocalBolo.dmg \
+            --title "LocalBolo ${GITHUB_REF_NAME#v}" \
+            --generate-notes
+
+      - name: Remove the signing keychain and keys
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/release.keychain-db" || true
+          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/notary-key.p8"
