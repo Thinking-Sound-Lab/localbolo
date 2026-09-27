@@ -246,7 +246,8 @@ macOS build minutes are expensive, and coding agents may push to many pull reque
 `main` only changes through the **merge queue**, which merges a pull request after the full
 check passes on it together with everything queued ahead of it. So the Mac build runs about
 once per merged pull request instead of on every push, and nothing reaches `main` untested.
-Queue a pull request with **Merge when ready**, or `gh pr merge <number>`.
+Maintainers merge by queueing a pull request with **Merge when ready** or `gh pr merge <number>`.
+Coding agents only open pull requests and merge them only when asked to.
 
 Run the Mac tests locally before pushing (see [Tests](#tests)); [`AGENTS.md`](AGENTS.md) asks
 coding agents to do the same.
