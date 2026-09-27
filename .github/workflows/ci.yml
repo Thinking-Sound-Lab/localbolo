@@ -1,9 +1,16 @@
 name: CI
 
+# macOS minutes are expensive, so the Mac build doesn't run on every push to a
+# pull request:
+#   - pull_request: quick checks only (the website). Coding agents and people
+#     run the Mac tests locally while they work.
+#   - merge_group: the full check, including the Mac build and tests, runs once
+#     when a pull request enters the merge queue. Nothing reaches main untested.
+#   - workflow_dispatch: run the full check on any branch from the Actions tab.
 on:
   pull_request:
-  push:
-    branches: [main]
+  merge_group:
+  workflow_dispatch:
 
 # A newer push to the same pull request or branch replaces the run in progress.
 concurrency:
@@ -28,9 +35,9 @@ jobs:
       - name: Check which apps changed
         id: filter
         env:
-          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: |
-          # Without a base commit to compare against (a new branch), check everything.
+          # Without a base commit to compare against (a manual run), check everything.
           if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
             echo "mac=true" >> "$GITHUB_OUTPUT"
             echo "web=true" >> "$GITHUB_OUTPUT"
@@ -49,7 +56,8 @@ jobs:
   mac:
     name: Mac app
     needs: changes
-    if: needs.changes.outputs.mac == 'true'
+    # Only in the merge queue or when run manually; see the note at the top.
+    if: needs.changes.outputs.mac == 'true' && github.event_name != 'pull_request'
     runs-on: macos-26
     timeout-minutes: 60
     defaults:
@@ -137,8 +145,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
 
-  # The single check that branch protection requires. Jobs for apps a pull
-  # request doesn't touch are skipped, which counts as passing here.
+  # The single check that branch protection and the merge queue require. Skipped
+  # jobs (an app that didn't change, or the Mac build on a pull request) count
+  # as passing here.
   ci-passed:
     name: CI passed
     needs: [changes, mac, web]
