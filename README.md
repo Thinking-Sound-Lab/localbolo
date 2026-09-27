@@ -162,8 +162,11 @@ apps/
 │   │   └── UI/                   Pill, menu bar, onboarding and settings
 │   └── LocalBoloTests/
 └── web/                          Marketing site (Next.js 16, Tailwind CSS 4)
+.github/workflows/                CI for pull requests, and the release pipeline
 docs/images/                      Screenshots for this README
-scripts/generate-app-icon.swift   Draws the app icons for both apps
+scripts/
+├── generate-app-icon.swift       Draws the app icons for both apps
+└── release-mac.sh                Builds, signs, notarizes and packages a release
 ```
 
 ## Development
@@ -228,13 +231,58 @@ and development icons for both apps:
 swift scripts/generate-app-icon.swift
 ```
 
+### Continuous integration
+
+Every pull request and every push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+| Job | Runs on | Checks |
+| --- | --- | --- |
+| **Mac app** | macOS 26, Xcode 26.6 | Unit tests of `LocalBolo Dev`, and that the production app compiles |
+| **Website** | Ubuntu | `pnpm lint` and `pnpm build` |
+| **CI passed** | Ubuntu | Summarizes the jobs above |
+
+A job only runs when its app (or the CI configuration) changed, so a website-only pull request
+doesn't wait for a Mac build. `main` only accepts changes through pull requests whose
+**CI passed** check succeeds.
+
 ### Releasing
 
-1. In Xcode, choose the **LocalBolo** scheme and **Product › Archive**.
-2. In the Organizer, choose **Distribute App › Direct Distribution**. Xcode signs the app with
-   the Developer ID, sends it to Apple for notarization, and exports the notarized app.
-3. Zip the app and attach it to a [GitHub release](https://github.com/Thinking-Sound-Lab/localbolo/releases).
-   The website's download button links to the latest release.
+Releases are signed with Thinking Sound Lab's Developer ID and notarized by Apple, so macOS
+opens them without warnings. [`scripts/release-mac.sh`](scripts/release-mac.sh) does the work:
+it archives the production app, signs it, notarizes and staples it, and packages a signed,
+notarized `LocalBolo.dmg`. The version comes from the command line or the tag.
+
+**From GitHub (recommended).** Push a version tag and
+[`.github/workflows/release.yml`](.github/workflows/release.yml) builds the disk image and
+publishes it as a GitHub release:
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+It needs these secrets, once, in the repository's `production` environment
+(Settings › Environments):
+
+| Secret | Value |
+| --- | --- |
+| `DEVELOPER_ID_CERTIFICATE_P12_BASE64` | The Developer ID Application certificate and its private key, exported from Keychain Access as a `.p12`, then `base64 -i certificate.p12` |
+| `DEVELOPER_ID_CERTIFICATE_PASSWORD` | The password chosen when exporting the `.p12` |
+| `NOTARY_KEY_P8` | The contents of an App Store Connect API key (`.p8`) with the Developer role |
+| `NOTARY_KEY_ID` | That key's ID |
+| `NOTARY_ISSUER_ID` | The issuer ID shown above the list of keys in App Store Connect |
+
+**From your Mac.** Store notarization credentials in the keychain once, then run the script:
+
+```sh
+xcrun notarytool store-credentials LocalBolo --apple-id <you@example.com> --team-id 4M5LV534N5
+scripts/release-mac.sh 0.2.0
+gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes
+```
+
+This repository is internal, so its releases are only visible to members of the organization.
+To let anyone download LocalBolo from the website, publish the disk image somewhere public and
+point `downloadUrl` in `apps/web/src/lib/site.ts` at it.
 
 ## Troubleshooting
 
