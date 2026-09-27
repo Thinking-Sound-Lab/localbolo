@@ -1,0 +1,15 @@
+.DS_Store
+.context/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# Personal signing overrides (see apps/mac/Config/Local.xcconfig.example)
+apps/mac/Config/Local.xcconfig
+
+# Swift Package Manager
+.swiftpm/
+.build/
