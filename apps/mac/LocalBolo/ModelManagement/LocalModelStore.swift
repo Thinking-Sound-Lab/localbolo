@@ -46,6 +46,11 @@ final class LocalModelStore<Loader: ModelLoader> {
         refreshInstalledModels()
     }
 
+    // There's nothing to clean up, so the deinit doesn't need to hop to the
+    // main actor. Keeping it nonisolated also avoids an Xcode 26 optimizer
+    // crash on main-actor deinits of generic classes.
+    nonisolated deinit {}
+
     var isBusy: Bool { inProgress != nil }
 
     func status(of model: Model) -> ModelStatus {
