@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 #
-# Builds LocalBolo for distribution: archives the production app, signs it
-# with the Developer ID, has Apple notarize it, and packages it as a signed,
-# notarized disk image at build/release/LocalBolo.dmg.
+# Builds LocalBolo for download from the website (not the Mac App Store):
+# archives the production app, signs it with the Developer ID, has Apple
+# notarize it, and packages it as a signed, notarized disk image at
+# build/release/LocalBolo.dmg.
+#
+# Notarization is Apple's automated malware check. Without it, macOS refuses
+# to open apps downloaded from the internet. Nothing is published anywhere.
 #
 # Usage: scripts/release-mac.sh <version>        e.g. scripts/release-mac.sh 0.2.0
 #
 # Needs the "Developer ID Application" certificate for team 4M5LV534N5 in the
-# keychain, and notarization credentials in one of two forms:
+# keychain, and an Apple ID on that team with an app-specific password for
+# notarization, in one of two forms:
 #   - On a Mac: a notarytool keychain profile named "LocalBolo", created once with
 #       xcrun notarytool store-credentials LocalBolo --apple-id <you@example.com> --team-id 4M5LV534N5
-#   - In CI: an App Store Connect API key in NOTARY_KEY_PATH, NOTARY_KEY_ID and NOTARY_ISSUER_ID.
+#   - In CI: NOTARY_APPLE_ID and NOTARY_PASSWORD.
 
 set -euo pipefail
 
@@ -25,9 +30,9 @@ APP="$OUT/export/LocalBolo.app"
 DMG="$OUT/LocalBolo.dmg"
 
 notarize() {
-  if [[ -n "${NOTARY_KEY_PATH:-}" ]]; then
+  if [[ -n "${NOTARY_APPLE_ID:-}" ]]; then
     xcrun notarytool submit "$1" --wait \
-      --key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID"
+      --apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id 4M5LV534N5
   else
     xcrun notarytool submit "$1" --wait --keychain-profile LocalBolo
   fi

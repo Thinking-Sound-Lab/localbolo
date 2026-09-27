@@ -247,8 +247,10 @@ doesn't wait for a Mac build. `main` only accepts changes through pull requests 
 
 ### Releasing
 
-Releases are signed with Thinking Sound Lab's Developer ID and notarized by Apple, so macOS
-opens them without warnings. [`scripts/release-mac.sh`](scripts/release-mac.sh) does the work:
+LocalBolo is distributed from the website only, not through the Mac App Store. Releases are
+signed with Thinking Sound Lab's Developer ID and notarized by Apple. Notarization is Apple's
+automated malware check, and without it macOS refuses to open apps downloaded from the internet.
+Nothing is uploaded to App Store Connect. [`scripts/release-mac.sh`](scripts/release-mac.sh) does the work:
 it archives the production app, signs it, notarizes and staples it, and packages a signed,
 notarized `LocalBolo.dmg`. The version comes from the command line or the tag.
 
@@ -271,9 +273,8 @@ It needs these secrets, once, in the repository's `production` environment
 | --- | --- |
 | `DEVELOPER_ID_CERTIFICATE_P12_BASE64` | The Developer ID Application certificate and its private key, exported from Keychain Access as a `.p12`, then `base64 -i certificate.p12` |
 | `DEVELOPER_ID_CERTIFICATE_PASSWORD` | The password chosen when exporting the `.p12` |
-| `NOTARY_KEY_P8` | The contents of an App Store Connect API key (`.p8`) with the Developer role |
-| `NOTARY_KEY_ID` | That key's ID |
-| `NOTARY_ISSUER_ID` | The issuer ID shown above the list of keys in App Store Connect |
+| `NOTARY_APPLE_ID` | The Apple ID (email) of a member of the Thinking Sound Lab developer team |
+| `NOTARY_APP_SPECIFIC_PASSWORD` | An app-specific password for that Apple ID, created at [account.apple.com](https://account.apple.com) › Sign-In and Security › App-Specific Passwords |
 
 **From your Mac.** Store notarization credentials in the keychain once, then run the script:
 
