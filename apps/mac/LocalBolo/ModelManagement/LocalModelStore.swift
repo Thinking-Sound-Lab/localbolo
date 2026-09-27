@@ -19,7 +19,10 @@ enum ModelStatus: Equatable {
 /// The active model keeps working while another one downloads, and is only
 /// replaced once the new model has loaded successfully.
 @Observable
-final class LocalModelStore<Model: LocalModel, Loaded: Sendable> {
+final class LocalModelStore<Loader: ModelLoader> {
+    typealias Model = Loader.Model
+    typealias Loaded = Loader.Loaded
+
     /// The model in use, persisted across launches.
     private(set) var activeModel: Model
     /// The active model once it's in memory.
@@ -31,11 +34,11 @@ final class LocalModelStore<Model: LocalModel, Loaded: Sendable> {
     /// Refreshed after each download or delete, so views don't hit the disk on every render.
     private var installedModels: Set<Model> = []
 
-    @ObservationIgnored private let loader: any ModelLoader<Model, Loaded>
+    @ObservationIgnored private let loader: Loader
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let activeModelKey: String
 
-    init(loader: some ModelLoader<Model, Loaded>, activeModelKey: String, defaults: UserDefaults = .standard) {
+    init(loader: Loader, activeModelKey: String, defaults: UserDefaults = .standard) {
         self.loader = loader
         self.defaults = defaults
         self.activeModelKey = activeModelKey

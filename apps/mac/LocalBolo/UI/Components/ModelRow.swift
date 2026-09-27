@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// A model in a settings list: what it is, its size, and its download / use control.
-struct ModelRow<Model: LocalModel, Loaded: Sendable>: View {
-    let store: LocalModelStore<Model, Loaded>
-    let model: Model
+struct ModelRow<Loader: ModelLoader>: View {
+    let store: LocalModelStore<Loader>
+    let model: Loader.Model
 
     var body: some View {
         let status = store.status(of: model)
@@ -13,7 +13,7 @@ struct ModelRow<Model: LocalModel, Loaded: Sendable>: View {
                 HStack(spacing: 6) {
                     Text(model.displayName)
                         .font(.headline)
-                    if model == Model.recommended {
+                    if model == Loader.Model.recommended {
                         Text("Recommended")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.white)

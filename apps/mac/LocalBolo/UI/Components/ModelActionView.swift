@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The download / use control for a model, including progress while the model
 /// downloads and loads.
-struct ModelActionView<Model: LocalModel, Loaded: Sendable>: View {
-    let store: LocalModelStore<Model, Loaded>
-    let model: Model
+struct ModelActionView<Loader: ModelLoader>: View {
+    let store: LocalModelStore<Loader>
+    let model: Loader.Model
 
     var body: some View {
         switch store.status(of: model) {

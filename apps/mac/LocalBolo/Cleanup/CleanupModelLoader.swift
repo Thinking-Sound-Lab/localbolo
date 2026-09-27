@@ -4,7 +4,7 @@ import MLXLLM
 import MLXLMCommon
 @preconcurrency import WhisperKit
 
-typealias CleanupModelStore = LocalModelStore<CleanupModel, TranscriptEditor>
+typealias CleanupModelStore = LocalModelStore<CleanupModelLoader>
 
 extension CleanupModelStore {
     convenience init(defaults: UserDefaults = .standard) {

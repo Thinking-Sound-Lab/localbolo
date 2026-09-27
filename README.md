@@ -252,14 +252,17 @@ opens them without warnings. [`scripts/release-mac.sh`](scripts/release-mac.sh) 
 it archives the production app, signs it, notarizes and staples it, and packages a signed,
 notarized `LocalBolo.dmg`. The version comes from the command line or the tag.
 
-**From GitHub (recommended).** Push a version tag and
-[`.github/workflows/release.yml`](.github/workflows/release.yml) builds the disk image and
+**From GitHub (recommended).** Tag a commit on `main` and push the tag.
+[`.github/workflows/release.yml`](.github/workflows/release.yml) waits for a maintainer to
+approve the run (Actions › the run › **Review deployments**), then builds the disk image and
 publishes it as a GitHub release:
 
 ```sh
-git tag v0.2.0
+git tag v0.2.0 origin/main
 git push origin v0.2.0
 ```
+
+Tags that don't point to a commit on `main` are rejected before any secret is used.
 
 It needs these secrets, once, in the repository's `production` environment
 (Settings › Environments):

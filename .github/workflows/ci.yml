@@ -89,6 +89,8 @@ jobs:
 
       - name: Build the production app
         # Unsigned: the Developer ID certificate is only needed when releasing.
+        # ARCHS=arm64 also applies to the Swift packages, which would otherwise
+        # be built for Intel too, although the app only runs on Apple Silicon.
         run: |
           xcodebuild build \
             -project LocalBolo.xcodeproj \
@@ -98,6 +100,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -skipPackagePluginValidation \
             -quiet \
+            ARCHS=arm64 \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Upload test results

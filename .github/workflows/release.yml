@@ -13,11 +13,23 @@ jobs:
     name: Build, notarize and publish
     runs-on: macos-26
     timeout-minutes: 90
-    # The signing and notarization secrets live in this environment, so only
-    # release runs can read them. It can also be set to require an approval.
+    # The signing and notarization secrets live in this environment. It only
+    # accepts v* tags and waits for a maintainer's approval, and those rules are
+    # repository settings, so changing this file can't get around them.
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history, for the check below
+
+      - name: Check that the tag is on main
+        # Only release code that went through a reviewed pull request.
+        run: |
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME points to a commit that isn't on main."
+            exit 1
+          fi
 
       - name: Select Xcode
         run: sudo xcode-select --switch /Applications/Xcode_26.6.app
@@ -66,8 +78,8 @@ jobs:
             --title "LocalBolo ${GITHUB_REF_NAME#v}" \
             --generate-notes
 
-      - name: Remove the signing keychain and key
+      - name: Remove the signing keychain and keys
         if: always()
         run: |
           security delete-keychain "$RUNNER_TEMP/release.keychain-db" || true
-          rm -f "$RUNNER_TEMP/notary-key.p8"
+          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/notary-key.p8"

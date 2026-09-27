@@ -1,6 +1,6 @@
 import Foundation
 
-typealias SpeechModelStore = LocalModelStore<SpeechModel, any Transcriber>
+typealias SpeechModelStore = LocalModelStore<SpeechModelLoader>
 
 extension SpeechModelStore {
     convenience init(defaults: UserDefaults = .standard) {
