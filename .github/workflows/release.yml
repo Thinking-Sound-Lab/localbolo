@@ -57,17 +57,11 @@ jobs:
           security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
           rm "$RUNNER_TEMP/certificate.p12"
 
-      - name: Save the notarization key
-        env:
-          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
-        run: echo "$NOTARY_KEY_P8" > "$RUNNER_TEMP/notary-key.p8"
-
       - name: Build, sign, notarize and package
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-          NOTARY_KEY_PATH: ${{ runner.temp }}/notary-key.p8
-          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
-          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          NOTARY_PASSWORD: ${{ secrets.NOTARY_APP_SPECIFIC_PASSWORD }}
         run: scripts/release-mac.sh "${GITHUB_REF_NAME#v}"
 
       - name: Publish the GitHub release
@@ -78,8 +72,8 @@ jobs:
             --title "LocalBolo ${GITHUB_REF_NAME#v}" \
             --generate-notes
 
-      - name: Remove the signing keychain and keys
+      - name: Remove the signing keychain and certificate
         if: always()
         run: |
           security delete-keychain "$RUNNER_TEMP/release.keychain-db" || true
-          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/notary-key.p8"
+          rm -f "$RUNNER_TEMP/certificate.p12"
