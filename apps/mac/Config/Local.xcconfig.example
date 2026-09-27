@@ -1,0 +1,9 @@
+// Copy this file to Local.xcconfig (git-ignored) to sign development builds
+// with your own identity. It only affects the development environment.
+//
+// macOS ties Microphone and Accessibility permissions to the app's code
+// signature. With the default ad-hoc signature the signature changes on every
+// build, so macOS forgets those permissions. A stable identity avoids that.
+
+DEVELOPMENT_TEAM = ABCDE12345
+CODE_SIGN_IDENTITY = Apple Development

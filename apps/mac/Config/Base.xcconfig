@@ -1,0 +1,33 @@
+// Build settings for the LocalBolo app shared by every environment.
+// Development.xcconfig and Production.xcconfig include this file and add
+// what differs between them.
+
+PRODUCT_MODULE_NAME = LocalBolo
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+// Speech models run on the Neural Engine, so only Apple Silicon is supported.
+MACOSX_DEPLOYMENT_TARGET = 15.0
+ARCHS = arm64
+
+// Info.plist
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.productivity
+INFOPLIST_KEY_NSMicrophoneUsageDescription = LocalBolo listens only while you hold the fn key, and transcribes your speech on this Mac.
+// Menu bar app: no Dock icon and no main menu.
+INFOPLIST_KEY_LSUIElement = YES
+
+// Assets
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
+
+// Swift
+SWIFT_VERSION = 6.0
+SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+SWIFT_APPROACHABLE_CONCURRENCY = YES
+SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES
+SWIFT_EMIT_LOC_STRINGS = YES
+
+// Not sandboxed: pasting into other apps needs Accessibility access, which
+// sandboxed apps can't use to send keystrokes.
+CODE_SIGN_ENTITLEMENTS = Config/LocalBolo.entitlements
+ENABLE_HARDENED_RUNTIME = YES

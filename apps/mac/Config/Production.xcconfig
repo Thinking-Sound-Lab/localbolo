@@ -1,0 +1,15 @@
+// The production environment, used by the Release configuration and archives.
+
+#include "Base.xcconfig"
+
+PRODUCT_NAME = LocalBolo
+PRODUCT_BUNDLE_IDENTIFIER = com.localbolo.LocalBolo
+INFOPLIST_KEY_CFBundleDisplayName = LocalBolo
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+
+// Signed with Thinking Sound Lab's Developer ID and a secure timestamp, as
+// required to notarize the app and distribute it outside the Mac App Store.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = Developer ID Application
+DEVELOPMENT_TEAM = 4M5LV534N5
+OTHER_CODE_SIGN_FLAGS = --timestamp
