@@ -233,17 +233,22 @@ swift scripts/generate-app-icon.swift
 
 ### Continuous integration
 
-Every pull request and every push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+macOS build minutes are expensive, and coding agents may push to many pull requests, so
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) splits its checks:
 
-| Job | Runs on | Checks |
-| --- | --- | --- |
-| **Mac app** | macOS 26, Xcode 26.6 | Unit tests of `LocalBolo Dev`, and that the production app compiles |
-| **Website** | Ubuntu | `pnpm lint` and `pnpm build` |
-| **CI passed** | Ubuntu | Summarizes the jobs above |
+| When | What runs |
+| --- | --- |
+| Every push to a pull request | Website: `pnpm lint` and `pnpm build`, on Ubuntu, in about a minute |
+| When a pull request enters the merge queue | Everything above, plus the Mac app's unit tests and a production build on macOS 26 / Xcode 26.6 |
+| **Actions › CI › Run workflow** | The full check, on any branch |
 
-A job only runs when its app (or the CI configuration) changed, so a website-only pull request
-doesn't wait for a Mac build. `main` only accepts changes through pull requests whose
-**CI passed** check succeeds.
+`main` only changes through the **merge queue**, which merges a pull request after the full
+check passes on it together with everything queued ahead of it. So the Mac build runs about
+once per merged pull request instead of on every push, and nothing reaches `main` untested.
+Queue a pull request with **Merge when ready**, or `gh pr merge <number>`.
+
+Run the Mac tests locally before pushing (see [Tests](#tests)); [`AGENTS.md`](AGENTS.md) asks
+coding agents to do the same.
 
 ### Releasing
 
