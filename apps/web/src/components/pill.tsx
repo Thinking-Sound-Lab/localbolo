@@ -55,8 +55,8 @@ export function Pill({ state, icon }: { state: PillState; icon?: ReactNode }) {
             key={index}
             className={cx(
               "w-[3px] rounded-full bg-white",
-              state === "listening" && "animate-wave",
-              state === "transcribing" && "animate-ripple opacity-55",
+              state === "listening" && "motion-safe:animate-wave",
+              state === "transcribing" && "opacity-55 motion-safe:animate-ripple",
             )}
             style={{
               height: `${height * 18}px`,

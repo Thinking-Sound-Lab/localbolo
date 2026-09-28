@@ -120,7 +120,7 @@ export function HeroDemo() {
             }
           >
             {phase === "pasted" ? <span className="animate-fade-in">{scene.transcript}</span> : null}
-            <span className="ml-px inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-blink bg-blue" />
+            <span className="ml-px inline-block h-[1.1em] w-[2px] translate-y-[3px] motion-safe:animate-blink bg-blue" />
           </p>
         </div>
       </div>

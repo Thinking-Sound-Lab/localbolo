@@ -14,7 +14,8 @@ type Pointer = { x: number; y: number } | null;
 /**
  * A dot-matrix display of a voice waveform: dots light up from the middle
  * row outwards as the "voice" gets louder, with the crest of each column in
- * the accent color. Dots swell around the pointer.
+ * the accent color. Dots swell around the pointer. With reduced motion it
+ * draws a single still frame.
  *
  * Dots use the element's text color; the crests use `--dot-accent`.
  */
@@ -73,7 +74,6 @@ export function DotWave({ className }: { className?: string }) {
       const y = event.clientY - bounds.top;
       const isNear = y > -pointerReach && y < bounds.height + pointerReach;
       pointer = isNear ? { x, y } : null;
-      if (prefersReducedMotion) render(performance.now());
     };
 
     const resizeObserver = new ResizeObserver(resize);
@@ -87,7 +87,8 @@ export function DotWave({ className }: { className?: string }) {
     });
     visibilityObserver.observe(canvas);
 
-    window.addEventListener("pointermove", trackPointer, { passive: true });
+    // With reduced motion the wave is a still image, so it ignores the pointer.
+    if (!prefersReducedMotion) window.addEventListener("pointermove", trackPointer, { passive: true });
     start();
 
     return () => {

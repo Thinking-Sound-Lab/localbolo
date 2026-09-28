@@ -31,7 +31,7 @@ const steps: { title: string; body: string; visual: ReactNode; tone: keyof typeo
     visual: (
       <p className="max-w-[15rem] border border-white/20 bg-ink px-3 py-2 text-left font-mono text-sm text-white">
         Sounds good, see you at three.
-        <span className="ml-px inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-blink bg-blue-soft" />
+        <span className="ml-px inline-block h-[1.1em] w-[2px] translate-y-[3px] motion-safe:animate-blink bg-blue-soft" />
       </p>
     ),
     tone: "dark",
