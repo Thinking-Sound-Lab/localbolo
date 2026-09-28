@@ -1,27 +1,17 @@
+import { PixelArt } from "@/components/pixel-art";
 import { cx } from "@/lib/cx";
+import { pixelIcons } from "@/lib/pixel-icons";
 
-/** LocalBolo's mark: the dictation pill with a waveform. */
-export function Logo({ className }: { className?: string }) {
+/**
+ * LocalBolo's mark: a pixel waveform with a blue centre. The default size is
+ * three screen pixels per art pixel, which keeps it crisp.
+ */
+export function Logo({ className, accentClassName }: { className?: string; accentClassName?: string }) {
   return (
-    <svg viewBox="0 0 40 20" className={cx("h-5 w-10", className)} aria-hidden>
-      <rect width="40" height="20" rx="10" className="fill-ink" />
-      {[
-        [11, 4],
-        [15, 7],
-        [19, 9],
-        [23, 7],
-        [27, 5],
-      ].map(([x, halfHeight]) => (
-        <rect
-          key={x}
-          x={x - 1}
-          y={10 - halfHeight}
-          width="2"
-          height={halfHeight * 2}
-          rx="1"
-          className="fill-paper"
-        />
-      ))}
-    </svg>
+    <PixelArt
+      art={pixelIcons.logo}
+      className={cx("h-[21px] w-[27px]", className)}
+      accentClassName={accentClassName}
+    />
   );
 }

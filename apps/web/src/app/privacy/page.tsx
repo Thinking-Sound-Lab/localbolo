@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { Eyebrow } from "@/components/sections/section-heading";
+import { pageMetadata } from "@/lib/metadata";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
+  path: "/privacy",
   title: "Privacy",
-  description: `How ${site.name} handles your voice and data.`,
-};
+  description: `How ${site.name} handles your voice and data: recordings stay on your Mac, with no accounts, analytics, or tracking.`,
+});
 
 const sections = [
   {
@@ -35,19 +37,24 @@ export default function PrivacyPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-2xl px-6 py-20 sm:py-28">
-        <p className="text-sm font-medium tracking-wide text-ember uppercase">Privacy</p>
-        <h1 className="mt-3 font-display text-6xl leading-none tracking-tight">Private by design.</h1>
-        <p className="mt-6 text-lg text-ink-soft">
+      <main id="main" className="mx-auto max-w-3xl px-6 py-20 sm:py-28">
+        <Eyebrow>Privacy</Eyebrow>
+        <h1 className="mt-5 text-5xl leading-[0.95] font-medium tracking-[-0.045em] sm:text-7xl">
+          Private by <span className="font-pixel font-normal tracking-[-0.02em] text-blue">design.</span>
+        </h1>
+        <p className="mt-7 text-lg text-ink-soft">
           {site.name} is built so that there is nothing to collect. Here is exactly what the app
           does with your data.
         </p>
 
-        <div className="mt-14 space-y-10">
-          {sections.map((section) => (
-            <section key={section.title}>
-              <h2 className="text-xl font-semibold tracking-tight">{section.title}</h2>
-              <p className="mt-2 leading-relaxed text-ink-soft">{section.body}</p>
+        <div className="mt-14 border-b border-line">
+          {sections.map((section, index) => (
+            <section key={section.title} className="grid gap-3 border-t border-line py-8 sm:grid-cols-[3rem_1fr]">
+              <p className="pt-1 font-mono text-xs text-ink-faint">0{index + 1}</p>
+              <div>
+                <h2 className="text-xl font-medium tracking-[-0.02em]">{section.title}</h2>
+                <p className="mt-2 leading-relaxed text-ink-soft">{section.body}</p>
+              </div>
             </section>
           ))}
         </div>

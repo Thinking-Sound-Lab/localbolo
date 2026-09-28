@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { BrowserIcon, ChatIcon, CodeIcon, MailIcon, NotesIcon } from "@/components/app-icons";
+import { useEffect, useState, type ReactNode } from "react";
+import { BrowserIcon, ChatIcon, MailIcon, NotesIcon, TerminalIcon } from "@/components/app-icons";
 import { FnKey } from "@/components/fn-key";
+import { Logo } from "@/components/logo";
 import { Pill, type PillState } from "@/components/pill";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 type Scene = {
   app: string;
@@ -48,7 +50,7 @@ const scenes: Scene[] = [
     app: "Notes",
     icon: <NotesIcon />,
     layout: "document",
-    context: <p className="text-lg font-semibold text-ink">Team offsite ideas</p>,
+    context: <p className="text-lg font-semibold tracking-tight text-ink">Team offsite ideas</p>,
     spoken: "A morning hike, a short demo day after lunch, and, uh, dinner somewhere with a view of the the water.",
     transcript:
       "A morning hike, a short demo day after lunch, and dinner somewhere with a view of the water.",
@@ -93,16 +95,16 @@ export function HeroDemo() {
     phase === "listening" ? "listening" : phase === "transcribing" ? "transcribing" : "resting";
 
   return (
-    <div className="relative mx-auto aspect-[4/5] w-full max-w-5xl overflow-hidden rounded-[28px] border border-black/5 bg-[radial-gradient(120%_90%_at_20%_0%,#ffd9c2_0%,#f6c8d8_38%,#c9c6f2_72%,#b7d4f0_100%)] shadow-[0_40px_80px_-30px_rgba(40,20,10,0.35)] sm:aspect-[16/10]">
+    <div className="relative mx-auto aspect-[4/5] w-full max-w-5xl overflow-hidden rounded-[20px] bg-blue shadow-[0_40px_80px_-32px_rgba(10,10,10,0.55)] ring-1 ring-ink/10 dot-grid [--dot-color:rgb(255_255_255/0.2)] sm:aspect-[16/10]">
       <MenuBar />
 
       {/* App window */}
-      <div className="absolute inset-x-[6%] top-[11%] bottom-[23%] flex flex-col overflow-hidden rounded-xl bg-white/95 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/5 sm:inset-x-[14%] sm:bottom-[20%]">
-        <div className="flex items-center gap-2 border-b border-black/5 px-4 py-3">
-          <span className="size-3 rounded-full bg-[#ff5f57]" />
-          <span className="size-3 rounded-full bg-[#febc2e]" />
-          <span className="size-3 rounded-full bg-[#28c840]" />
-          <div className="ml-3 flex items-center gap-2 text-sm font-medium text-ink-soft">
+      <div className="absolute inset-x-[6%] top-[11%] bottom-[23%] flex flex-col overflow-hidden rounded-lg bg-white shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)] sm:inset-x-[14%] sm:bottom-[20%]">
+        <div className="flex items-center gap-2 border-b border-ink/10 px-4 py-3">
+          <span className="size-3 rounded-full bg-ink/15" />
+          <span className="size-3 rounded-full bg-ink/15" />
+          <span className="size-3 rounded-full bg-ink/15" />
+          <div className="ml-3 flex items-center gap-2 font-mono text-xs text-ink-soft">
             <span className="size-4">{scene.icon}</span>
             {scene.app}
           </div>
@@ -113,12 +115,12 @@ export function HeroDemo() {
           <p
             className={
               scene.layout === "chat"
-                ? "mt-auto min-h-20 rounded-lg border border-black/10 bg-white p-3 text-[15px] leading-relaxed text-ink sm:text-base"
+                ? "mt-auto min-h-20 rounded-md border border-ink/15 bg-white p-3 text-[15px] leading-relaxed text-ink sm:text-base"
                 : "pt-1 text-[15px] leading-relaxed text-ink sm:text-base"
             }
           >
             {phase === "pasted" ? <span className="animate-fade-in">{scene.transcript}</span> : null}
-            <span className="ml-px inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-pulse bg-ink" />
+            <span className="ml-px inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-blink bg-blue" />
           </p>
         </div>
       </div>
@@ -127,7 +129,7 @@ export function HeroDemo() {
       <div className="absolute inset-x-0 bottom-[12.5%] flex flex-col items-center gap-2 px-6">
         <p
           aria-hidden={phase !== "listening"}
-          className={`max-w-md rounded-xl bg-black/70 px-3 py-1.5 text-center text-xs text-white/90 italic backdrop-blur-md transition-opacity duration-300 sm:text-sm ${
+          className={`max-w-md rounded-md bg-ink px-3 py-1.5 text-center text-xs text-white transition-opacity duration-300 sm:text-sm ${
             phase === "listening" ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -147,23 +149,27 @@ export function HeroDemo() {
 
 function MenuBar() {
   return (
-    <div className="absolute inset-x-0 top-0 flex h-7 items-center justify-end gap-4 bg-white/25 px-4 text-xs font-medium text-ink/70 backdrop-blur-md">
-      <svg viewBox="0 0 24 24" className="size-4 fill-none stroke-current stroke-2 [stroke-linecap:round]" aria-hidden>
-        <path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" />
-      </svg>
+    <div className="absolute inset-x-0 top-0 flex h-7 items-center justify-end gap-4 bg-white/10 px-4 font-mono text-xs text-white/85 backdrop-blur-md">
+      <Logo className="h-[14px] w-[18px] text-white" accentClassName="fill-white" />
       <span>Mon 9:41</span>
     </div>
   );
 }
 
-const dockIcons = [MailIcon, ChatIcon, NotesIcon, CodeIcon, BrowserIcon];
+const dockIcons = [
+  { app: "Mail", Icon: MailIcon },
+  { app: "Chat", Icon: ChatIcon },
+  { app: "Notes", Icon: NotesIcon },
+  { app: "Terminal", Icon: TerminalIcon },
+  { app: "Browser", Icon: BrowserIcon },
+];
 
 function Dock() {
   return (
     <div className="absolute inset-x-0 bottom-[2.5%] flex justify-center">
-      <div className="flex gap-2 rounded-2xl border border-white/40 bg-white/30 p-1.5 backdrop-blur-xl sm:gap-2.5 sm:p-2">
-        {dockIcons.map((Icon) => (
-          <div key={Icon.name} className="size-7 sm:size-10">
+      <div className="flex gap-2 rounded-2xl border border-white/30 bg-white/15 p-1.5 backdrop-blur-xl sm:gap-2.5 sm:p-2">
+        {dockIcons.map(({ app, Icon }) => (
+          <div key={app} className="size-7 sm:size-10">
             <Icon />
           </div>
         ))}
@@ -174,8 +180,8 @@ function Dock() {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-3 border-b border-black/5 pb-2 text-sm">
-      <span className="w-16 text-ink-faint">{label}</span>
+    <div className="flex gap-3 border-b border-ink/10 pb-2 text-sm">
+      <span className="w-16 font-mono text-xs leading-5 text-ink-faint">{label}</span>
       <span className="text-ink">{children}</span>
     </div>
   );
@@ -187,19 +193,5 @@ function Message({ name, children }: { name: string; children: ReactNode }) {
       <span className="font-semibold text-ink">{name}</span>
       <p className="mt-0.5 text-ink-soft">{children}</p>
     </div>
-  );
-}
-
-const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
-
-function usePrefersReducedMotion() {
-  return useSyncExternalStore(
-    (onChange) => {
-      const query = window.matchMedia(reducedMotionQuery);
-      query.addEventListener("change", onChange);
-      return () => query.removeEventListener("change", onChange);
-    },
-    () => window.matchMedia(reducedMotionQuery).matches,
-    () => false,
   );
 }

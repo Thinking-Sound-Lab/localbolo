@@ -220,8 +220,10 @@ pnpm install
 pnpm dev      # http://localhost:3000
 ```
 
-Copy and links live in `src/lib/site.ts`. The model list in `src/lib/models.ts` mirrors the app's
-`SpeechModel.swift`.
+Copy, links and the price live in `src/lib/site.ts`. The model list in `src/lib/models.ts` mirrors
+the app's `SpeechModel.swift`. The site generates its own `robots.txt`, `sitemap.xml`, web
+manifest, link preview image, `llms.txt` and schema.org data; see
+[`apps/web/README.md`](apps/web/README.md).
 
 ### App icon
 
@@ -292,8 +294,8 @@ gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes
 ```
 
 This repository is internal, so its releases are only visible to members of the organization.
-To let anyone download LocalBolo from the website, publish the disk image somewhere public and
-point `downloadUrl` in `apps/web/src/lib/site.ts` at it.
+To sell LocalBolo from the website, point `purchaseUrl` in `apps/web/src/lib/site.ts` at the
+checkout page, which should deliver the disk image. Every Buy button on the site uses it.
 
 ## Troubleshooting
 

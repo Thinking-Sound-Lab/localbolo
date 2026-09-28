@@ -1,0 +1,12 @@
+/**
+ * Embeds schema.org data as JSON-LD for search engines. `<` is escaped so
+ * nothing in the data can close the script tag early.
+ */
+export function StructuredData({ data }: { data: object }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
