@@ -9,7 +9,7 @@ const columns = 46;
 const rows = 9;
 const middleRow = (rows - 1) / 2;
 
-/** Rows lit on each side of the middle, per column: a still frame of the site's dot waveform. */
+/** Rows lit on each side of the middle, per column: a still frame of the site's pixel waveform. */
 const reach = Array.from({ length: columns }, (_, column) => {
   const position = column / (columns - 1);
   const syllables = 0.5 + 0.5 * Math.sin(position * 34);
@@ -18,7 +18,7 @@ const reach = Array.from({ length: columns }, (_, column) => {
   return loudness * (middleRow + 0.5);
 });
 
-function dotColor(column: number, row: number) {
+function pixelColor(column: number, row: number) {
   const distance = Math.abs(row - middleRow);
   if (distance >= reach[column]) return "#262626";
   return distance >= reach[column] - 1 ? "#8e9cff" : "#ffffff";
@@ -55,10 +55,7 @@ export default function OpenGraphImage() {
           {reach.map((_, column) => (
             <div key={column} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {Array.from({ length: rows }, (_, row) => (
-                <div
-                  key={row}
-                  style={{ width: 12, height: 12, borderRadius: 6, background: dotColor(column, row) }}
-                />
+                <div key={row} style={{ width: 12, height: 12, background: pixelColor(column, row) }} />
               ))}
             </div>
           ))}

@@ -10,6 +10,7 @@ import { HowItWorks } from "@/components/sections/how-it-works";
 import { Models } from "@/components/sections/models";
 import { Pricing } from "@/components/sections/pricing";
 import { Privacy } from "@/components/sections/privacy";
+import { Speed } from "@/components/sections/speed";
 import { WorksEverywhere } from "@/components/sections/works-everywhere";
 import { pageMetadata } from "@/lib/metadata";
 import { homePageStructuredData } from "@/lib/structured-data";
@@ -24,6 +25,7 @@ export default function HomePage() {
       <main id="main">
         <Hero />
         <WorksEverywhere />
+        <Speed />
         <HowItWorks />
         <Cleanup />
         <Features />

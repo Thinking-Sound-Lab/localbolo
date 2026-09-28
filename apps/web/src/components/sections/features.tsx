@@ -1,3 +1,4 @@
+import { CardIndex } from "@/components/card";
 import { PixelArt } from "@/components/pixel-art";
 import { SectionHeading } from "@/components/sections/section-heading";
 import { pixelIcons } from "@/lib/pixel-icons";
@@ -39,13 +40,16 @@ export function Features() {
   return (
     <section id="features" className="scroll-mt-16 border-t border-line">
       <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
-        <SectionHeading eyebrow="Why LocalBolo" title="Built to disappear into your day." />
+        <SectionHeading eyebrow="What's inside" title="Built to disappear into your day." />
 
         <div className="mt-14 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title} className="bg-paper p-7 sm:p-8">
-              <PixelArt art={feature.icon} className="h-[27px] w-auto text-ink" />
-              <h3 className="mt-8 text-xl font-medium tracking-[-0.02em]">{feature.title}</h3>
+          {features.map((feature, index) => (
+            <div key={feature.title} className="bg-white p-7 sm:p-8">
+              <div className="flex items-start justify-between">
+                <PixelArt art={feature.icon} className="h-[27px] w-auto text-ink" />
+                <CardIndex index={index + 1} />
+              </div>
+              <h3 className="mt-8 text-lg font-medium tracking-[-0.02em]">{feature.title}</h3>
               <p className="mt-2 text-ink-soft">{feature.body}</p>
             </div>
           ))}

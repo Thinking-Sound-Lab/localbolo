@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #f5f5f3;
+  --color-paper: #ffffff;
+  --color-mist: #f5f5f4;
   --color-ink: #0a0a0a;
   --color-ink-soft: #404040;
   --color-ink-faint: #6b6b6b;
-  --color-line: #dcdcd8;
+  --color-line: #e3e3e0;
   --color-blue: #1f3dff;
+  --color-blue-deep: #1830d6;
   --color-blue-soft: #8e9cff;
-  --color-blue-pale: #e4e8ff;
+  --color-blue-pale: #eaedff;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -56,19 +58,43 @@
   }
 }
 
-/* A grid of dots, drawn in --dot-color (faint ink unless set). */
-@utility dot-grid {
-  background-image: radial-gradient(
-    circle at center,
-    var(--dot-color, rgb(10 10 10 / 0.13)) 1px,
-    transparent 1.5px
+/* A grid of small square pixels in --pixel-color (faint ink unless set). */
+@utility pixel-grid {
+  background-image: conic-gradient(
+    at 2px 2px,
+    transparent 75%,
+    var(--pixel-color, rgb(10 10 10 / 0.12)) 0
   );
   background-size: 16px 16px;
+  background-position: 7px 7px;
 }
 
-/* Geist Pixel draws square pixels by default; this switches it to round dots. */
-@utility pixel-dots {
-  font-variation-settings: "ELSH" 25;
+/*
+ * Characters that AsciiHover has scrambled: the real letter turns
+ * transparent, keeping its width, and an ASCII glyph is drawn over it in the
+ * letter's own color. The glyph is decorative, so screen readers skip it and
+ * read the real letter.
+ */
+[data-glyph] {
+  position: relative;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-glyph]::after {
+  content: attr(data-glyph) / "";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+  -webkit-text-fill-color: currentColor;
+}
+
+[data-glyph-accent]::after {
+  -webkit-text-fill-color: var(--color-blue);
 }
 
 html {

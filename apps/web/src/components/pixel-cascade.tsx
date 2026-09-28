@@ -1,10 +1,13 @@
 import { cx } from "@/lib/cx";
-import { dotsPath, seededRandom, squaresPath, type Cell } from "@/lib/pixels";
+import { seededRandom, squaresPath, type Cell } from "@/lib/pixels";
+
+/** Gap left around each pixel on the right-hand side, in cells. */
+const spacedInset = 0.14;
 
 /**
- * Pixels piling up from both bottom corners: squares on the left (text),
- * dots on the right (voice). Meant for a dark background. Seeded, so it
- * renders the same on every visit.
+ * Square pixels piling up from both bottom corners: solid blocks on the left,
+ * spaced-out pixels like a display matrix on the right. Meant for a dark
+ * background. Seeded, so it renders the same on every visit.
  */
 export function PixelCascade({
   seed,
@@ -18,8 +21,8 @@ export function PixelCascade({
   className?: string;
 }) {
   const random = seededRandom(seed);
-  const shades = { blue: [] as Cell[], soft: [] as Cell[], white: [] as Cell[] };
-  const dots = { blue: [] as Cell[], soft: [] as Cell[], white: [] as Cell[] };
+  const solid = { blue: [] as Cell[], soft: [] as Cell[], white: [] as Cell[] };
+  const spaced = { blue: [] as Cell[], soft: [] as Cell[], white: [] as Cell[] };
 
   for (let x = 0; x < columns; x++) {
     const isLeft = x < columns / 2;
@@ -34,7 +37,7 @@ export function PixelCascade({
 
       const pick = random();
       const shade = pick < 0.55 ? "soft" : pick < 0.85 ? "blue" : "white";
-      (isLeft ? shades : dots)[shade].push({ x, y });
+      (isLeft ? solid : spaced)[shade].push({ x, y });
     }
   }
 
@@ -45,14 +48,12 @@ export function PixelCascade({
       aria-hidden
       className={cx("block h-auto w-full", className)}
     >
-      <path d={squaresPath(shades.soft)} className="fill-blue-soft" />
-      <path d={squaresPath(shades.blue)} className="fill-blue" />
-      <path d={squaresPath(shades.white)} className="fill-white" />
-      <g shapeRendering="geometricPrecision">
-        <path d={dotsPath(dots.soft)} className="fill-blue-soft" />
-        <path d={dotsPath(dots.blue)} className="fill-blue" />
-        <path d={dotsPath(dots.white)} className="fill-white" />
-      </g>
+      <path d={squaresPath(solid.soft)} className="fill-blue-soft" />
+      <path d={squaresPath(solid.blue)} className="fill-blue" />
+      <path d={squaresPath(solid.white)} className="fill-white" />
+      <path d={squaresPath(spaced.soft, spacedInset)} className="fill-blue-soft" />
+      <path d={squaresPath(spaced.blue, spacedInset)} className="fill-blue" />
+      <path d={squaresPath(spaced.white, spacedInset)} className="fill-white" />
     </svg>
   );
 }

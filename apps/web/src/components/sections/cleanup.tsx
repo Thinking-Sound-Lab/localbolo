@@ -1,3 +1,4 @@
+import { CardIndex } from "@/components/card";
 import { SectionHeading } from "@/components/sections/section-heading";
 import { cx } from "@/lib/cx";
 
@@ -17,7 +18,7 @@ const examples: Fragment[][] = [
 
 export function Cleanup() {
   return (
-    <section id="cleanup" className="scroll-mt-16 border-t border-line">
+    <section id="cleanup" className="scroll-mt-16 border-t border-line bg-mist">
       <div className="mx-auto grid max-w-6xl gap-14 px-6 py-24 sm:py-32 lg:grid-cols-[1fr_1.25fr]">
         <div>
           <SectionHeading eyebrow="Cleanup" title="Say it messy. Get it clean.">
@@ -30,8 +31,8 @@ export function Cleanup() {
           </p>
         </div>
 
-        <ul className="border-b border-line">
-          {examples.map((fragments) => {
+        <ul className="border border-line bg-white">
+          {examples.map((fragments, index) => {
             const typed = fragments
               .filter((fragment) => !fragment.isDropped)
               .map((fragment) => fragment.text)
@@ -40,16 +41,14 @@ export function Cleanup() {
             return (
               <li
                 key={typed}
-                className="grid gap-x-6 gap-y-2 border-t border-line py-7 sm:grid-cols-[6.5rem_1fr]"
+                className="relative grid gap-x-6 gap-y-2 border-line p-6 not-first:border-t sm:grid-cols-[6.5rem_1fr]"
               >
+                <CardIndex index={index + 1} className="absolute top-6 right-6" />
                 <Label className="text-ink-faint">You said</Label>
-                <p className="text-lg text-ink-soft">
+                <p className="pr-10 text-lg text-ink-soft">
                   {fragments.map((fragment) =>
                     fragment.isDropped ? (
-                      <del
-                        key={fragment.text}
-                        className="text-ink-faint/80 decoration-blue decoration-[1.5px]"
-                      >
+                      <del key={fragment.text} className="text-ink-faint/80 decoration-blue decoration-[1.5px]">
                         {fragment.text}
                       </del>
                     ) : (

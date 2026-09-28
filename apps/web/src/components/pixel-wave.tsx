@@ -4,22 +4,22 @@ import { useEffect, useRef } from "react";
 import { cx } from "@/lib/cx";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
-/** Distance between dot centres, in CSS pixels. */
-const spacing = 14;
-/** How far around the pointer dots swell, in CSS pixels. */
+/** Distance between pixel centres, in CSS pixels. */
+const spacing = 12;
+/** How far around the pointer pixels grow, in CSS pixels. */
 const pointerReach = 110;
 
 type Pointer = { x: number; y: number } | null;
 
 /**
- * A dot-matrix display of a voice waveform: dots light up from the middle
- * row outwards as the "voice" gets louder, with the crest of each column in
- * the accent color. Dots swell around the pointer. With reduced motion it
- * draws a single still frame.
+ * A voice waveform on a grid of square pixels: pixels light up from the
+ * middle row outwards as the "voice" gets louder, with the crest of each
+ * column in the accent color. Pixels grow around the pointer. With reduced
+ * motion it draws a single still frame.
  *
- * Dots use the element's text color; the crests use `--dot-accent`.
+ * Pixels use the element's text color; the crests use `--pixel-accent`.
  */
-export function DotWave({ className }: { className?: string }) {
+export function PixelWave({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -30,8 +30,8 @@ export function DotWave({ className }: { className?: string }) {
 
     const style = getComputedStyle(canvas);
     const colors = {
-      dot: style.color,
-      accent: style.getPropertyValue("--dot-accent").trim() || style.color,
+      pixel: style.color,
+      accent: style.getPropertyValue("--pixel-accent").trim() || style.color,
     };
 
     let width = 0;
@@ -121,7 +121,7 @@ function drawWave(
   height: number,
   seconds: number,
   pointer: Pointer,
-  colors: { dot: string; accent: string },
+  colors: { pixel: string; accent: string },
 ) {
   context.clearRect(0, 0, width, height);
 
@@ -144,17 +144,15 @@ function drawWave(
       const isLit = distance < reach;
       const isCrest = isLit && distance >= reach - 1;
 
-      let radius = isLit ? 2.6 : 1.1;
+      let size = isLit ? 6 : 2;
       if (pointer) {
         const closeness = 1 - Math.hypot(x - pointer.x, y - pointer.y) / pointerReach;
-        if (closeness > 0) radius += closeness * (isLit ? 1.6 : 1.4);
+        if (closeness > 0) size += closeness * 3;
       }
 
-      context.globalAlpha = isLit ? 1 : 0.2;
-      context.fillStyle = isCrest ? colors.accent : colors.dot;
-      context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fill();
+      context.globalAlpha = isLit ? 1 : 0.25;
+      context.fillStyle = isCrest ? colors.accent : colors.pixel;
+      context.fillRect(Math.round(x - size / 2), Math.round(y - size / 2), Math.round(size), Math.round(size));
     }
   }
 

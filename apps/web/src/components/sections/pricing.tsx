@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BuyButton } from "@/components/buy-button";
 import { PixelArt } from "@/components/pixel-art";
 import { SectionHeading } from "@/components/sections/section-heading";
@@ -21,7 +22,7 @@ export function Pricing() {
           meter.
         </SectionHeading>
 
-        <div className="mt-14 grid bg-blue text-white dot-grid [--dot-color:rgb(255_255_255/0.2)] md:grid-cols-2">
+        <div className="mt-14 grid bg-blue text-white pixel-grid [--pixel-color:rgb(255_255_255/0.2)] md:grid-cols-2">
           <div className="flex flex-col p-8 sm:p-12">
             <p className="font-mono text-xs tracking-[0.14em] text-white/75 uppercase">
               {site.name} for Mac
@@ -33,7 +34,7 @@ export function Pricing() {
               One-time purchase · {site.price.currency}
             </p>
             <div className="mt-auto pt-12">
-              <BuyButton tone="light" />
+              <BuyButton tone="white" />
               <p className="mt-4 font-mono text-xs tracking-wide text-white/75">{site.requirements}</p>
             </div>
           </div>
@@ -47,6 +48,13 @@ export function Pricing() {
             ))}
           </ul>
         </div>
+
+        <p className="mt-5 text-sm text-ink-faint">
+          Not for you? Ask within {site.refundDays} days for a full refund.{" "}
+          <Link href="/refunds" className="text-ink underline underline-offset-4 hover:text-blue">
+            Refund policy
+          </Link>
+        </p>
       </div>
     </section>
   );

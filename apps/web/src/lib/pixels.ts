@@ -18,22 +18,13 @@ export function seededRandom(seed: number) {
 }
 
 /**
- * SVG path data with a square in each cell. Keeping every square in one path
- * avoids hairline seams between neighbours.
+ * SVG path data with a square in each cell, shrunk by `inset` on every side
+ * (in cells) to leave a gap between neighbours. Keeping every square in one
+ * path avoids hairline seams between touching squares.
  */
-export function squaresPath(cells: Cell[]) {
-  return cells.map(({ x, y }) => `M${x} ${y}h1v1h-1z`).join("");
-}
-
-/** SVG path data with a dot in each cell. */
-export function dotsPath(cells: Cell[], radius = 0.38) {
-  const diameter = radius * 2;
-  return cells
-    .map(
-      ({ x, y }) =>
-        `M${x + 0.5 - radius} ${y + 0.5}a${radius} ${radius} 0 1 0 ${diameter} 0a${radius} ${radius} 0 1 0 ${-diameter} 0z`,
-    )
-    .join("");
+export function squaresPath(cells: Cell[], inset = 0) {
+  const size = 1 - inset * 2;
+  return cells.map(({ x, y }) => `M${x + inset} ${y + inset}h${size}v${size}h${-size}z`).join("");
 }
 
 /**

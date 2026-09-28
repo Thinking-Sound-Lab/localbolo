@@ -7,6 +7,10 @@ export const faq: { question: string; answer: string }[] = [
     answer: `${site.price.label}, once. There's no subscription, and because dictation runs on your Mac, there are no word limits or minutes to count.`,
   },
   {
+    question: "Can I get a refund?",
+    answer: `Yes. If LocalBolo isn't right for you, email us within ${site.refundDays} days of buying it for a full refund, no questions asked.`,
+  },
+  {
     question: "Which Macs does LocalBolo run on?",
     answer:
       "Any Mac with Apple Silicon (M1 or newer) running macOS 15 Sequoia or later. The speech models run on the Neural Engine, which Intel Macs don't have.",

@@ -13,17 +13,22 @@ pnpm lint
 
 ```
 src/
-  app/                   Routes, root layout, icons, and the files search engines read
+  app/                   Routes: home, support, changelog, privacy, terms, refunds,
+                         plus icons and the files search engines read
   components/
-    sections/            One file per landing page section
+    sections/            One file per home page section
+    doc-page.tsx         Layout for long pages: numbered sections and "On this page"
     hero-demo.tsx        Animated dictation demo (client component)
-    dot-wave.tsx         The hero's dot-matrix voice waveform (canvas, client component)
+    ascii-hover.tsx      Hero headline letters that turn into ASCII near the pointer
+    pixel-wave.tsx       The hero's pixel voice waveform (canvas, client component)
     pixel-art.tsx        Draws pixel art from rows of text
     pixel-edge.tsx       Pixel "terrain" where a light section meets a dark one
     pixel-cascade.tsx    Pixels piling up from the corners of the final call to action
+    card.tsx             Hairline cards, their 001-style numbers, and framed illustrations
+    buy-button.tsx       The square Buy button, secondary links and corner marks
     pill.tsx             The dictation pill, matching the Mac app's design
   lib/
-    site.ts              Name, copy, price and purchase link
+    site.ts              Name, price, refund window, contact, purchase link, footer links
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
     pixel-icons.ts       Every pixel-art icon, drawn as text
@@ -33,22 +38,30 @@ src/
 
 ## Design
 
-Black, white and one blue. Voice is drawn as round dots and text as square pixels, which is why
-the hero waveform is a dot matrix and the section edges are square pixels. Type is Geist for
-text, Geist Mono for labels, and Geist Pixel for accents; its `pixel-dots` utility switches the
-pixels to round dots. Colors, fonts and animations are defined with `@theme` in
-`src/app/globals.css`.
+The layout follows dictation apps like Wispr Flow and Superwhisper: a centered hero with the
+product demo, the apps it works in, then speed, how it works, features, privacy, models,
+pricing, FAQ and a full footer. The details follow Supermemory: square corners, hairline
+cards numbered 001, 002…, framed illustrations with corner marks, monospaced labels and
+square buttons.
+
+Black, white and one blue. **Every pixel is square**: the hero waveform, the section edges,
+the background grids (`pixel-grid`) and Geist Pixel, the font used for accents. Type is
+Geist for text and Geist Mono for labels. Colors, fonts and animations are defined with
+`@theme` in `src/app/globals.css`.
 
 Icons are pixel art written as text in `src/lib/pixel-icons.ts`: `#` is a pixel and `+` is a
 blue accent pixel. Draw them on a small grid (9 × 9 for most) and render them at a whole
 multiple of that size so every pixel stays sharp.
+
+Motion respects reduced-motion settings: the waveform holds still, the demo shows its final
+frame and the ASCII hover is off.
 
 ## Search engines
 
 | Route | Source | Purpose |
 | --- | --- | --- |
 | `/robots.txt` | `app/robots.ts` | Allows crawling and points to the sitemap |
-| `/sitemap.xml` | `app/sitemap.ts` | Lists every page; add new pages here |
+| `/sitemap.xml` | `app/sitemap.ts` | Lists every page; add new pages here and to the footer |
 | `/manifest.webmanifest` | `app/manifest.ts` | Name, icons and colors for browsers |
 | `/opengraph-image` | `app/opengraph-image.tsx` | The link preview image |
 | `/llms.txt` | `app/llms.txt/route.ts` | A plain-text summary for AI assistants |

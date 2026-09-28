@@ -5,22 +5,22 @@ import { site } from "@/lib/site";
 
 const navigation = [
   { label: "How it works", href: "/#how-it-works" },
+  { label: "Features", href: "/#features" },
   { label: "Privacy", href: "/#privacy" },
-  { label: "Models", href: "/#models" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "FAQ", href: "/#faq" },
+  { label: "Support", href: "/support" },
 ];
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-paper/85 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 border-b border-line bg-white/90 backdrop-blur-lg">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:bg-ink focus:px-3 focus:py-2 focus:text-sm focus:text-white"
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-6">
         <Link href="/" className="flex items-center gap-3 text-[17px] font-semibold tracking-tight">
           <Logo />
           {site.name}

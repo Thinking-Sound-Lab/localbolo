@@ -13,12 +13,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// The element-shape axis switches the pixels between squares and dots. Next
-// has no metrics to size a fallback for this font, so it falls back to mono.
+// Square pixels, the font's default shape. Next has no metrics to size a
+// fallback for this font, so it falls back to mono.
 const geistPixel = Geist_Pixel({
   variable: "--font-geist-pixel",
   subsets: ["latin"],
-  axes: ["ELSH"],
   adjustFontFallback: false,
   fallback: ["ui-monospace", "monospace"],
 });
@@ -48,7 +47,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f5f3",
+  themeColor: "#ffffff",
   colorScheme: "light",
 };
 

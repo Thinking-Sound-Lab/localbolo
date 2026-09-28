@@ -1,13 +1,31 @@
+import Link from "next/link";
 import { PixelArt } from "@/components/pixel-art";
 import { SectionHeading } from "@/components/sections/section-heading";
 import { faq } from "@/lib/faq";
 import { pixelIcons } from "@/lib/pixel-icons";
+import { site } from "@/lib/site";
 
 export function Faq() {
   return (
     <section id="faq" className="scroll-mt-16 border-t border-line">
       <div className="mx-auto grid max-w-6xl gap-14 px-6 py-24 sm:py-32 lg:grid-cols-[1fr_1.3fr]">
-        <SectionHeading eyebrow="FAQ" title="Questions, answered." />
+        <div>
+          <SectionHeading eyebrow="FAQ" title="Questions, answered." />
+          <p className="mt-6 text-ink-soft">
+            Something else?{" "}
+            <Link href="/support" className="text-ink underline underline-offset-4 hover:text-blue">
+              Visit support
+            </Link>{" "}
+            or email{" "}
+            <a
+              href={`mailto:${site.supportEmail}`}
+              className="text-ink underline underline-offset-4 hover:text-blue"
+            >
+              {site.supportEmail}
+            </a>
+            .
+          </p>
+        </div>
 
         <div className="border-b border-line">
           {faq.map((item) => (

@@ -95,7 +95,7 @@ export function HeroDemo() {
     phase === "listening" ? "listening" : phase === "transcribing" ? "transcribing" : "resting";
 
   return (
-    <div className="relative mx-auto aspect-[4/5] w-full max-w-5xl overflow-hidden rounded-[20px] bg-blue shadow-[0_40px_80px_-32px_rgba(10,10,10,0.55)] ring-1 ring-ink/10 dot-grid [--dot-color:rgb(255_255_255/0.2)] sm:aspect-[16/10]">
+    <div className="relative mx-auto aspect-[4/5] w-full max-w-5xl overflow-hidden bg-blue shadow-[0_40px_80px_-32px_rgba(10,10,10,0.55)] ring-1 ring-ink/10 pixel-grid [--pixel-color:rgb(255_255_255/0.2)] sm:aspect-[16/10]">
       <MenuBar />
 
       {/* App window */}

@@ -27,7 +27,7 @@ export function Privacy() {
   return (
     <section id="privacy" className="scroll-mt-16">
       <PixelEdge seed={7} className="text-ink" />
-      <div className="bg-ink text-white dot-grid [--dot-color:rgb(255_255_255/0.08)]">
+      <div className="bg-ink text-white pixel-grid [--pixel-color:rgb(255_255_255/0.08)]">
         <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
           <Eyebrow className="text-white/60">Privacy</Eyebrow>
           <h2 className="mt-5 max-w-3xl text-4xl leading-[0.98] font-medium tracking-[-0.04em] text-balance sm:text-6xl">
@@ -38,7 +38,7 @@ export function Privacy() {
             {zeros.map((label) => (
               <div key={label} className="flex flex-col-reverse justify-end gap-4">
                 <dt className="font-mono text-xs tracking-[0.14em] text-white/60 uppercase">{label}</dt>
-                <dd className="font-pixel text-7xl leading-none text-blue-soft pixel-dots sm:text-9xl">0</dd>
+                <dd className="font-pixel text-7xl leading-none text-blue-soft sm:text-9xl">0</dd>
               </div>
             ))}
           </dl>
