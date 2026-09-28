@@ -26,35 +26,25 @@ function outcomeOf(status: string | null | undefined): Outcome {
 
 /**
  * Looks the payment up with Dodo rather than trusting the URL, so a crafted
- * link can't show a fake confirmation. The license key, if the product
- * issues one, comes from Dodo too.
+ * link can't show a fake confirmation. It shows nothing private: anyone with
+ * the link sees the same page, so license keys only go out by email.
  */
-async function findPurchase(params: Record<string, string | string[] | undefined>) {
+async function findOutcome(params: Record<string, string | string[] | undefined>): Promise<Outcome> {
   const paymentId = typeof params.payment_id === "string" ? params.payment_id : undefined;
   if (!paymentId) {
     // /buy sends status=unavailable, with no payment, when checkout can't start.
-    return { outcome: params.status === "unavailable" ? "unavailable" : "unknown" } as const;
+    return params.status === "unavailable" ? "unavailable" : "unknown";
   }
 
   const dodo = dodoClient();
-  if (!dodo) return { outcome: "unknown" } as const;
+  if (!dodo) return "unknown";
 
   try {
     const payment = await dodo.payments.retrieve(paymentId);
-    const outcome = outcomeOf(payment.status);
-    if (outcome !== "succeeded") return { outcome };
-
-    let licenseKey: string | undefined;
-    for await (const key of dodo.licenseKeys.list({ customer_id: payment.customer.customer_id })) {
-      if (key.payment_id === payment.payment_id) {
-        licenseKey = key.key;
-        break;
-      }
-    }
-    return { outcome, licenseKey };
+    return outcomeOf(payment.status);
   } catch (error) {
     console.error("Couldn't look up a Dodo payment:", error);
-    return { outcome: "unknown" } as const;
+    return "unknown";
   }
 }
 
@@ -70,7 +60,7 @@ const email = (
  * download and any license key.
  */
 export default async function PurchasePage({ searchParams }: PageProps<"/purchase">) {
-  const { outcome, licenseKey } = await findPurchase(await searchParams);
+  const outcome = await findOutcome(await searchParams);
 
   return (
     <>
@@ -87,16 +77,6 @@ export default async function PurchasePage({ searchParams }: PageProps<"/purchas
                 We&apos;ve emailed your receipt and download link. It comes from Dodo Payments, who
                 handle checkout for us.
               </p>
-
-              {licenseKey ? (
-                <div className="mt-8 border border-line bg-white p-6">
-                  <p className="font-mono text-[11px] tracking-[0.12em] text-ink-faint uppercase">
-                    Your license key
-                  </p>
-                  <p className="mt-2 font-mono text-lg break-all select-all">{licenseKey}</p>
-                  <p className="mt-2 text-sm text-ink-faint">It&apos;s in your email too.</p>
-                </div>
-              ) : null}
 
               <ol className="mt-8 border border-line bg-white">
                 {[
