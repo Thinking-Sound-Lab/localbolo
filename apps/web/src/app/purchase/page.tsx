@@ -4,26 +4,58 @@ import { BuyButton, SecondaryLink } from "@/components/buy-button";
 import { Eyebrow } from "@/components/sections/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { dodoClient } from "@/lib/dodo";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Your purchase",
   robots: { index: false, follow: false },
-  // The URL can carry the buyer's license key, so never send it to other sites.
+  // The URL identifies the buyer's payment, so never send it to other sites.
   referrer: "no-referrer",
 };
 
-type Outcome = "succeeded" | "pending" | "failed" | "unavailable";
+type Outcome = "succeeded" | "pending" | "failed" | "unavailable" | "unknown";
 
-/**
- * Dodo's payment status, as added to the return URL, grouped by what the
- * buyer needs to hear. /buy sends "unavailable" when checkout can't start.
- */
-function outcomeOf(status: string | undefined): Outcome {
+/** A payment's status, grouped by what the buyer needs to hear. */
+function outcomeOf(status: string | null | undefined): Outcome {
   if (status === "succeeded") return "succeeded";
   if (status === "failed" || status === "cancelled") return "failed";
   if (status === "processing" || status?.startsWith("requires_")) return "pending";
-  return "unavailable";
+  return "unknown";
+}
+
+/**
+ * Looks the payment up with Dodo rather than trusting the URL, so a crafted
+ * link can't show a fake confirmation. The license key, if the product
+ * issues one, comes from Dodo too.
+ */
+async function findPurchase(params: Record<string, string | string[] | undefined>) {
+  const paymentId = typeof params.payment_id === "string" ? params.payment_id : undefined;
+  if (!paymentId) {
+    // /buy sends status=unavailable, with no payment, when checkout can't start.
+    return { outcome: params.status === "unavailable" ? "unavailable" : "unknown" } as const;
+  }
+
+  const dodo = dodoClient();
+  if (!dodo) return { outcome: "unknown" } as const;
+
+  try {
+    const payment = await dodo.payments.retrieve(paymentId);
+    const outcome = outcomeOf(payment.status);
+    if (outcome !== "succeeded") return { outcome };
+
+    let licenseKey: string | undefined;
+    for await (const key of dodo.licenseKeys.list({ customer_id: payment.customer.customer_id })) {
+      if (key.payment_id === payment.payment_id) {
+        licenseKey = key.key;
+        break;
+      }
+    }
+    return { outcome, licenseKey };
+  } catch (error) {
+    console.error("Couldn't look up a Dodo payment:", error);
+    return { outcome: "unknown" } as const;
+  }
 }
 
 const email = (
@@ -33,15 +65,12 @@ const email = (
 );
 
 /**
- * Where Dodo Payments sends buyers after checkout. The page only reports the
- * outcome: Dodo emails the receipt, the download and any license key.
+ * Where Dodo Payments sends buyers after checkout, with the payment's ID in
+ * the URL. The page only reports the outcome: Dodo emails the receipt, the
+ * download and any license key.
  */
 export default async function PurchasePage({ searchParams }: PageProps<"/purchase">) {
-  const params = await searchParams;
-  const status = typeof params.status === "string" ? params.status : undefined;
-  const buyerEmail = typeof params.email === "string" ? params.email : undefined;
-  const licenseKey = typeof params.license_key === "string" ? params.license_key : undefined;
-  const outcome = outcomeOf(status);
+  const { outcome, licenseKey } = await findPurchase(await searchParams);
 
   return (
     <>
@@ -55,14 +84,8 @@ export default async function PurchasePage({ searchParams }: PageProps<"/purchas
                 Thank you. {site.name} is <span className="font-pixel font-normal text-blue">yours.</span>
               </h1>
               <p className="mt-6 text-lg text-ink-soft">
-                We&apos;ve emailed your receipt and download link
-                {buyerEmail ? (
-                  <>
-                    {" "}
-                    to <strong className="font-medium text-ink">{buyerEmail}</strong>
-                  </>
-                ) : null}
-                . It comes from Dodo Payments, who handle checkout for us.
+                We&apos;ve emailed your receipt and download link. It comes from Dodo Payments, who
+                handle checkout for us.
               </p>
 
               {licenseKey ? (
@@ -118,6 +141,17 @@ export default async function PurchasePage({ searchParams }: PageProps<"/purchas
                 <BuyButton />
                 <SecondaryLink href="/support">Get help</SecondaryLink>
               </div>
+            </>
+          ) : outcome === "unknown" ? (
+            <>
+              <Eyebrow>Your purchase</Eyebrow>
+              <h1 className="mt-5 text-5xl leading-[0.95] font-medium tracking-[-0.045em] sm:text-6xl">
+                We couldn&apos;t find that purchase.
+              </h1>
+              <p className="mt-6 text-lg text-ink-soft">
+                If you bought {site.name}, your receipt and download link are in your email, from
+                Dodo Payments. Can&apos;t find them? Write to {email}.
+              </p>
             </>
           ) : (
             <>

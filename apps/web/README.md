@@ -69,7 +69,7 @@ except these, which run on the server:
 | Route | What it does |
 | --- | --- |
 | `/buy` | Creates a checkout session for the LocalBolo product and redirects to Dodo's checkout. Every Buy button links here. |
-| `/purchase` | Where Dodo sends buyers back, with `status`, `email` and any `license_key` in the URL. It only reports the outcome; it's `noindex` and sends no referrer. |
+| `/purchase` | Where Dodo sends buyers back. It looks up the `payment_id` from the URL with Dodo, so a crafted link can't fake a confirmation, and reports the outcome with the license key if the product issues one. It's `noindex` and sends no referrer. |
 | `/api/webhooks/dodo` | Verifies each webhook's signature and logs sales, refunds and disputes (IDs and amounts only). |
 
 ### Setting it up
