@@ -70,8 +70,10 @@ const sections: DocSection[] = [
         </li>
         <li>
           <strong>Clipboard.</strong> To paste into any app, the transcript is briefly placed on
-          the clipboard. Whatever you had copied is restored straight afterwards, and the
-          transcript is marked so clipboard managers can skip it.
+          the clipboard. By default, whatever you had copied is restored straight afterwards, and
+          the transcript is marked so clipboard managers can skip it. If you turn off “Restore
+          clipboard after pasting” in Settings, or haven&apos;t allowed Accessibility yet, the
+          transcript stays on the clipboard like anything else you copy.
         </li>
       </ul>
     ),

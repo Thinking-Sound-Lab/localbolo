@@ -57,7 +57,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${geistPixel.variable} antialiased`}
     >
-      <body className="min-h-full font-sans">{children}</body>
+      {/* "Back to top" links point here. */}
+      <body id="top" className="min-h-full font-sans">
+        {children}
+      </body>
     </html>
   );
 }

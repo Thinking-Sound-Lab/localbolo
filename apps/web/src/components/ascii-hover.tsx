@@ -11,9 +11,9 @@ const reach = 70;
 const glyphInterval = 70;
 
 /**
- * Wraps text written with `AsciiText`. Letters near the mouse pointer
- * dissolve into cycling ASCII characters, then settle back a moment after
- * the pointer moves on. It does nothing for touch input or with reduced
+ * Wraps text written with `AsciiText`. Letters the mouse pointer passes
+ * dissolve into cycling ASCII characters, then settle back a moment after it
+ * moves on or comes to rest. It does nothing for touch input or with reduced
  * motion.
  */
 export function AsciiHover({ children, className }: { children: ReactNode; className?: string }) {
@@ -27,9 +27,12 @@ export function AsciiHover({ children, className }: { children: ReactNode; class
     const letters = [...container.querySelectorAll<HTMLElement>("[data-letter]")];
     /** Scrambled letters, with when each settles back and when it last changed. */
     const scrambled = new Map<HTMLElement, { settleAt: number; changedAt: number }>();
+    /** Where the pointer moved to since the last frame, if it moved. */
     let pointer: { x: number; y: number } | null = null;
     let frame = 0;
 
+    // Letters are measured only after the pointer moves, and the loop stops
+    // once every letter has settled, so a resting pointer costs nothing.
     const tick = (now: number) => {
       if (pointer) {
         for (const letter of letters) {
@@ -45,6 +48,7 @@ export function AsciiHover({ children, className }: { children: ReactNode; class
           if (state) state.settleAt = Math.max(state.settleAt, settleAt);
           else scrambled.set(letter, { settleAt, changedAt: 0 });
         }
+        pointer = null;
       }
 
       for (const [letter, state] of scrambled) {
@@ -57,7 +61,7 @@ export function AsciiHover({ children, className }: { children: ReactNode; class
         }
       }
 
-      frame = pointer || scrambled.size > 0 ? requestAnimationFrame(tick) : 0;
+      frame = scrambled.size > 0 ? requestAnimationFrame(tick) : 0;
     };
 
     const trackPointer = (event: PointerEvent) => {
@@ -66,17 +70,11 @@ export function AsciiHover({ children, className }: { children: ReactNode; class
       if (!frame) frame = requestAnimationFrame(tick);
     };
 
-    const forgetPointer = () => {
-      pointer = null;
-    };
-
     container.addEventListener("pointermove", trackPointer);
-    container.addEventListener("pointerleave", forgetPointer);
 
     return () => {
       cancelAnimationFrame(frame);
       container.removeEventListener("pointermove", trackPointer);
-      container.removeEventListener("pointerleave", forgetPointer);
       scrambled.forEach((_, letter) => restore(letter));
     };
   }, [prefersReducedMotion]);
