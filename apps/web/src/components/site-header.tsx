@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { BuyButton } from "@/components/buy-button";
 import { Logo } from "@/components/logo";
-import { site } from "@/lib/site";
 
 const navigation = [
   { label: "How it works", href: "/#how-it-works" },
@@ -20,9 +19,8 @@ export function SiteHeader() {
         Skip to content
       </a>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-6">
-        <Link href="/" className="flex items-center gap-3 text-[17px] font-semibold tracking-tight">
-          <Logo />
-          {site.name}
+        <Link href="/" className="transition-opacity hover:opacity-70">
+          <Logo className="h-[26px]" />
         </Link>
         <nav aria-label="Main" className="hidden items-center gap-8 text-sm text-ink-soft md:flex">
           {navigation.map((item) => (

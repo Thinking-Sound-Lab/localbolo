@@ -3,8 +3,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { BrowserIcon, ChatIcon, MailIcon, NotesIcon, TerminalIcon } from "@/components/app-icons";
 import { FnKey } from "@/components/fn-key";
-import { Logo } from "@/components/logo";
 import { Pill, type PillState } from "@/components/pill";
+import { PixelArt } from "@/components/pixel-art";
+import { pixelIcons } from "@/lib/pixel-icons";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 type Scene = {
@@ -150,7 +151,7 @@ export function HeroDemo() {
 function MenuBar() {
   return (
     <div className="absolute inset-x-0 top-0 flex h-7 items-center justify-end gap-4 bg-white/10 px-4 font-mono text-xs text-white/85 backdrop-blur-md">
-      <Logo className="h-[14px] w-[18px] text-white" accentClassName="fill-white" />
+      <PixelArt art={pixelIcons.waveform} className="h-[14px] w-[18px] text-white" accentClassName="fill-white" />
       <span>Mon 9:41</span>
     </div>
   );

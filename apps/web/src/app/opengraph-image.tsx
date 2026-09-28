@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { site } from "@/lib/site";
+import { wordmark } from "@/lib/wordmark";
 
 export const alt = `${site.name}: ${site.tagline}`;
 export const size = { width: 1200, height: 630 };
@@ -39,8 +40,10 @@ export default function OpenGraphImage() {
           color: "#ffffff",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28 }}>
-          <div style={{ display: "flex", fontWeight: 700, letterSpacing: -0.5 }}>{site.name}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 28 }}>
+          <svg viewBox={wordmark.viewBox} width={(wordmark.width / wordmark.height) * 34} height={34}>
+            <path fill="#ffffff" fillRule="evenodd" d={wordmark.path} />
+          </svg>
           <div style={{ display: "flex", color: "#a3a3a3" }}>
             {site.price.label} once · {site.requirements}
           </div>

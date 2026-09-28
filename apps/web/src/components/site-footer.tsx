@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { BuyButton } from "@/components/buy-button";
 import { Logo } from "@/components/logo";
+import { PixelArt } from "@/components/pixel-art";
+import { pixelIcons } from "@/lib/pixel-icons";
 import { footerLinks, site } from "@/lib/site";
 
 /** The footer sits on black, continuing the final call to action. */
@@ -10,9 +12,8 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-12 border-t border-white/10 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <Link href="/" className="flex items-center gap-3 text-[17px] font-semibold tracking-tight">
-              <Logo className="text-white" accentClassName="fill-blue-soft" />
-              {site.name}
+            <Link href="/" className="inline-block transition-opacity hover:opacity-70">
+              <Logo className="h-7 text-white" />
             </Link>
             <p className="mt-4 max-w-xs text-sm text-white/60">
               Private dictation for Mac. Your voice is turned into text on your Mac and never leaves
@@ -58,13 +59,10 @@ export function SiteFooter() {
         </div>
       </div>
 
-      {/* The name, set large in square pixels, bleeding off the bottom edge. */}
-      <p
-        aria-hidden
-        className="-mb-[0.18em] text-center font-pixel text-[21vw] leading-none tracking-[-0.04em] whitespace-nowrap text-white/[0.07] select-none"
-      >
-        {site.name}
-      </p>
+      {/* The wordmark, large and in square pixels, bleeding off the bottom edge. */}
+      <div className="mx-auto -mb-[3%] max-w-6xl px-6 pt-4">
+        <PixelArt art={pixelIcons.wordmark} className="h-auto w-full text-white/[0.07]" />
+      </div>
     </footer>
   );
 }

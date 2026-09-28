@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Logo } from "@/components/logo";
+import { PixelArt } from "@/components/pixel-art";
 import { cx } from "@/lib/cx";
+import { pixelIcons } from "@/lib/pixel-icons";
 import { site } from "@/lib/site";
 
 const sizes = {
@@ -22,7 +23,7 @@ const tones = {
 };
 
 /**
- * The call to action: buy LocalBolo. A square button with the logo in a box
+ * The call to action: buy LocalBolo. A square button with an arrow in a box
  * at its start and a monospaced label.
  */
 export function BuyButton({
@@ -39,14 +40,17 @@ export function BuyButton({
       href={site.purchaseUrl}
       rel="nofollow"
       className={cx(
-        "inline-flex items-stretch border font-mono tracking-[0.08em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
+        "group inline-flex items-stretch border font-mono tracking-[0.08em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
         sizes[size].button,
         tones[tone].button,
         className,
       )}
     >
       <span className={cx("grid shrink-0 place-items-center", sizes[size].icon, tones[tone].icon)}>
-        <Logo className="h-[14px] w-[18px]" accentClassName="fill-current" />
+        <PixelArt
+          art={pixelIcons.arrow}
+          className="size-[14px] transition-transform group-hover:translate-x-0.5"
+        />
       </span>
       <span className={cx("flex items-center whitespace-nowrap", sizes[size].label)}>
         Buy for {site.price.label}

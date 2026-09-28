@@ -29,13 +29,15 @@ src/
     pixel-cascade.tsx    Pixels piling up from the corners of the final call to action
     card.tsx             Hairline cards, their 001-style numbers, and framed illustrations
     buy-button.tsx       The square Buy button, secondary links and corner marks
+    logo.tsx             The "localbolo" wordmark, LocalBolo's logo
     pill.tsx             The dictation pill, matching the Mac app's design
   lib/
     site.ts              Name, price, refund window, contact, purchase link, footer links
     dodo.ts              The Dodo Payments client and product
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
-    pixel-icons.ts       Every pixel-art icon, drawn as text
+    wordmark.ts          The wordmark as one SVG path, traced from the logo artwork
+    pixel-icons.ts       Every pixel-art icon, drawn as text, including a pixel wordmark
     metadata.ts          Per-page title, canonical URL and link previews
     structured-data.ts   schema.org data for the home page
 ```
@@ -47,6 +49,10 @@ product demo, the apps it works in, then speed, how it works, features, privacy,
 pricing, FAQ and a full footer. The details follow Supermemory: square corners, hairline
 cards numbered 001, 002…, framed illustrations with corner marks, monospaced labels and
 square buttons.
+
+The logo is the "localbolo" wordmark on its own, with no symbol beside it. It's drawn in the
+text color, black on light backgrounds and white on dark ones; `docs/images/wordmark.svg` and
+`wordmark-white.svg` are standalone copies.
 
 Black, white and one blue. **Every pixel is square**: the hero waveform, the section edges,
 the background grids (`pixel-grid`) and Geist Pixel, the font used for accents. Type is

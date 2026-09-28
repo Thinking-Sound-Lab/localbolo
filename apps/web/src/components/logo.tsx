@@ -1,17 +1,20 @@
-import { PixelArt } from "@/components/pixel-art";
 import { cx } from "@/lib/cx";
-import { pixelIcons } from "@/lib/pixel-icons";
+import { wordmark } from "@/lib/wordmark";
 
 /**
- * LocalBolo's mark: a pixel waveform with a blue centre. The default size is
- * three screen pixels per art pixel, which keeps it crisp.
+ * LocalBolo's logo, the "localbolo" wordmark. It's drawn in the text color,
+ * so it works on light and dark backgrounds. Set its height; the width
+ * follows.
  */
-export function Logo({ className, accentClassName }: { className?: string; accentClassName?: string }) {
+export function Logo({ className }: { className?: string }) {
   return (
-    <PixelArt
-      art={pixelIcons.logo}
-      className={cx("h-[21px] w-[27px]", className)}
-      accentClassName={accentClassName}
-    />
+    <svg
+      viewBox={wordmark.viewBox}
+      role="img"
+      aria-label="LocalBolo"
+      className={cx("h-6 w-auto fill-current", className)}
+    >
+      <path fillRule="evenodd" d={wordmark.path} />
+    </svg>
   );
 }

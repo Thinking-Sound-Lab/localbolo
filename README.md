@@ -1,8 +1,9 @@
-<p align="center">
-  <img src="apps/web/public/app-icon.png" width="128" height="128" alt="LocalBolo app icon">
-</p>
-
-<h1 align="center">LocalBolo</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/wordmark-white.svg">
+    <img src="docs/images/wordmark.svg" width="320" alt="LocalBolo">
+  </picture>
+</h1>
 
 <p align="center">
   Private, on-device voice dictation for macOS.<br>
