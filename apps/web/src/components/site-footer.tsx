@@ -3,12 +3,6 @@ import { BuyButton } from "@/components/buy-button";
 import { Logo } from "@/components/logo";
 import { footerLinks, site } from "@/lib/site";
 
-const legalLinks = [
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
-  { label: "Refunds", href: "/refunds" },
-];
-
 /** The footer sits on black, continuing the final call to action. */
 export function SiteFooter() {
   return (
@@ -49,19 +43,9 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-col gap-4 border-t border-white/10 py-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <span>
-              © {new Date().getFullYear()} {site.legalName}
-            </span>
-            {legalLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="transition-colors hover:text-white">
-                {link.label}
-              </Link>
-            ))}
-            <a href={`mailto:${site.supportEmail}`} className="transition-colors hover:text-white">
-              {site.supportEmail}
-            </a>
-          </div>
+          <span>
+            © {new Date().getFullYear()} {site.legalName}
+          </span>
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-2">
               <span aria-hidden className="size-1.5 bg-blue-soft" />

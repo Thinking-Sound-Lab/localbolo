@@ -124,6 +124,16 @@ const sections: DocSection[] = [
     ),
   },
   {
+    id: "trademarks",
+    title: "Other companies' names and logos",
+    content: (
+      <p>
+        App names and logos shown on this site belong to their owners and appear only to show where{" "}
+        {site.name} works. {site.name} isn&apos;t affiliated with or endorsed by them.
+      </p>
+    ),
+  },
+  {
     id: "changes",
     title: "Changes to these terms",
     content: (

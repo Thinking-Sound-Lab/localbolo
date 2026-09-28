@@ -7,7 +7,7 @@ export const site = {
   company: "Thinking Sound Lab",
   /** The legal entity that sells LocalBolo, as it appears in the policies. */
   legalName: "Thinking Sound Lab Private Limited",
-  supportEmail: "support@localbolo.app",
+  supportEmail: "abhishek@ThinkingSoundLab.com",
   /** Base URL for absolute links such as link previews. Set per environment in .env.development / .env.production. */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   /** Where every Buy button goes. Point this at the checkout page once payments are set up. */
@@ -18,7 +18,7 @@ export const site = {
     label: "$49",
   },
   /** How long after buying a customer can ask for a full refund. */
-  refundDays: 30,
+  refundDays: 7,
   requirements: "macOS 15 or later · Apple Silicon",
 } as const;
 

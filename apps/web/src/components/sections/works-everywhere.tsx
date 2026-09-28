@@ -1,5 +1,37 @@
-/** Apps people dictate into most. LocalBolo pastes into any text field, so these are examples. */
-const apps = ["Mail", "Messages", "Slack", "Notion", "Google Docs", "Cursor", "Xcode", "Terminal"];
+import {
+  siClaude,
+  siCursor,
+  siDiscord,
+  siGmail,
+  siGooglechrome,
+  siGoogledocs,
+  siImessage,
+  siLinear,
+  siNotion,
+  siObsidian,
+  siWhatsapp,
+  siXcode,
+  type SimpleIcon,
+} from "simple-icons";
+
+/**
+ * Apps people dictate into most, with their logos from Simple Icons.
+ * LocalBolo pastes into any text field, so these are only examples.
+ */
+const apps: SimpleIcon[] = [
+  siGmail,
+  siImessage,
+  siWhatsapp,
+  siDiscord,
+  siNotion,
+  siGoogledocs,
+  siObsidian,
+  siLinear,
+  siClaude,
+  siCursor,
+  siXcode,
+  siGooglechrome,
+];
 
 export function WorksEverywhere() {
   return (
@@ -11,13 +43,16 @@ export function WorksEverywhere() {
         >
           Works wherever you can type
         </h2>
-        <ul className="mt-8 grid grid-cols-2 border-t border-l border-white/10 sm:grid-cols-4 lg:grid-cols-8">
+        <ul className="mt-8 grid grid-cols-3 border-t border-l border-white/10 sm:grid-cols-4 lg:grid-cols-6">
           {apps.map((app) => (
             <li
-              key={app}
-              className="grid h-20 place-items-center border-r border-b border-white/10 px-2 text-center font-pixel text-lg text-white/85"
+              key={app.slug}
+              className="flex h-28 flex-col items-center justify-center gap-3 border-r border-b border-white/10 px-2"
             >
-              {app}
+              <svg viewBox="0 0 24 24" aria-hidden className="size-7 fill-white/85">
+                <path d={app.path} />
+              </svg>
+              <span className="font-mono text-[11px] tracking-wide text-white/55">{app.title}</span>
             </li>
           ))}
         </ul>

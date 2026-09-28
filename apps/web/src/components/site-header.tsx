@@ -6,9 +6,8 @@ import { site } from "@/lib/site";
 const navigation = [
   { label: "How it works", href: "/#how-it-works" },
   { label: "Features", href: "/#features" },
-  { label: "Privacy", href: "/#privacy" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Support", href: "/support" },
+  { label: "Changelog", href: "/changelog" },
 ];
 
 export function SiteHeader() {
