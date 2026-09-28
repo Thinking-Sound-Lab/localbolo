@@ -10,8 +10,8 @@ export const site = {
   supportEmail: "abhishek@ThinkingSoundLab.com",
   /** Base URL for absolute links such as link previews. Set per environment in .env.development / .env.production. */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  /** Where every Buy button goes. Point this at the checkout page once payments are set up. */
-  purchaseUrl: "https://github.com/Thinking-Sound-Lab/localbolo/releases/latest",
+  /** Where every Buy button goes: starts a Dodo Payments checkout (app/buy/route.ts). */
+  purchaseUrl: "/buy",
   price: {
     amount: 49,
     currency: "USD",

@@ -3,7 +3,8 @@ import { site } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", allow: "/" },
+    // /buy starts a checkout and /purchase is a buyer's receipt, so keep crawlers out.
+    rules: { userAgent: "*", allow: "/", disallow: ["/buy", "/purchase", "/api/"] },
     sitemap: `${site.url}/sitemap.xml`,
   };
 }

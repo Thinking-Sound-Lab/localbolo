@@ -35,7 +35,9 @@ export function Pricing() {
             </p>
             <div className="mt-auto pt-12">
               <BuyButton tone="white" />
-              <p className="mt-4 font-mono text-xs tracking-wide text-white/75">{site.requirements}</p>
+              <p className="mt-4 font-mono text-xs tracking-wide text-white/75">
+                Secure checkout by Dodo Payments · {site.requirements}
+              </p>
             </div>
           </div>
 

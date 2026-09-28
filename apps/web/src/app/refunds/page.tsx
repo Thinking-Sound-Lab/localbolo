@@ -37,8 +37,9 @@ const sections: DocSection[] = [
     title: "When the money arrives",
     content: (
       <p>
-        Refunds go back to the payment method you used. Once we&apos;ve issued it, your bank or card
-        provider usually takes 5 to 10 business days to show it.
+        Refunds are issued through Dodo Payments, who process our payments, back to the payment
+        method you used. Once it&apos;s issued, your bank or card provider usually takes 5 to 10
+        business days to show it.
       </p>
     ),
   },

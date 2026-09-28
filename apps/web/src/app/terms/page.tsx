@@ -83,9 +83,10 @@ const sections: DocSection[] = [
     title: "Payment and refunds",
     content: (
       <p>
-        Prices are shown on this website and charged once, in the currency shown, through our
-        payment provider, which may add taxes required where you live. If {site.name} isn&apos;t
-        right for you, you can ask for a full refund within {site.refundDays} days. See the{" "}
+        Prices are shown on this website and charged once. Dodo Payments sells {site.name} on our
+        behalf as the merchant of record: it processes your payment, adds any taxes required where
+        you live, and its buyer terms also apply to your purchase. If {site.name} isn&apos;t right
+        for you, you can ask for a full refund within {site.refundDays} days. See the{" "}
         <Link href="/refunds">refund policy</Link>.
       </p>
     ),

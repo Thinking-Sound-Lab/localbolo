@@ -294,8 +294,9 @@ gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes
 ```
 
 This repository is internal, so its releases are only visible to members of the organization.
-To sell LocalBolo from the website, point `purchaseUrl` in `apps/web/src/lib/site.ts` at the
-checkout page, which should deliver the disk image. Every Buy button on the site uses it.
+The website sells LocalBolo through Dodo Payments, which delivers the disk image to buyers by
+email. Attach each new `LocalBolo.dmg` to the product in the Dodo dashboard; see
+[Payments](apps/web/README.md#payments).
 
 ## Troubleshooting
 

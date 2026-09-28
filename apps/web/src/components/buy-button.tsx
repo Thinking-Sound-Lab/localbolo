@@ -37,6 +37,7 @@ export function BuyButton({
   return (
     <a
       href={site.purchaseUrl}
+      rel="nofollow"
       className={cx(
         "inline-flex items-stretch border font-mono tracking-[0.08em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
         sizes[size].button,

@@ -119,8 +119,11 @@ const sections: DocSection[] = [
     content: (
       <>
         <p>
-          Payments are handled by our payment provider, which collects your payment details under
-          its own privacy policy. We never see your full card number.
+          {site.name} is sold through Dodo Payments, which acts as the merchant of record: it runs
+          checkout, processes your payment, charges any sales tax and sends your receipt and
+          download. It collects your payment details under{" "}
+          <a href="https://dodopayments.com/privacy-policy">its own privacy policy</a>. We never see
+          your full card number.
         </p>
         <p>
           We receive your name, email address, country and order details. We use them to deliver
