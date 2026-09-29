@@ -121,6 +121,18 @@ struct LicenseManagerTests {
         #expect(license.status == .needsVerification)
     }
 
+    @Test func aSuccessfulCheckUnlocksEvenWithTheClockBehind() async {
+        storeActivation(checkedDaysAgo: 31, latestSeenDaysAgo: 0)
+        let license = makeManager(
+            FakeLicenseServer(["licenses/validate": .init(status: 200, body: #"{"valid":true}"#)]),
+            now: today.addingTimeInterval(-40 * 24 * 60 * 60)
+        )
+
+        await license.verifyNow()
+
+        #expect(license.isLicensed)
+    }
+
     @Test func ignoresAnActivationFromAnotherMac() {
         storeActivation(checkedDaysAgo: 1, machineID: "another-mac")
 

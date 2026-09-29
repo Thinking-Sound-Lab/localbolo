@@ -184,9 +184,11 @@ final class LicenseManager {
         guard var current = self.activation, current.instanceID == activation.instanceID else { return nil }
 
         if isValid {
-            let date = now()
+            // Count the check from the latest time seen, not a clock that's
+            // been turned back, or a good check could still leave it locked.
+            let date = effectiveNow(for: current)
             current.lastValidated = date
-            current.latestSeen = max(current.latestSeen, date)
+            current.latestSeen = date
             save(current)
         } else {
             Logger.license.notice("License key is no longer valid; removing the activation")

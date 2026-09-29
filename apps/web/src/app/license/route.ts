@@ -7,7 +7,8 @@
 export function GET(request: Request) {
   const businessId = process.env.DODO_PAYMENTS_BUSINESS_ID;
   if (!businessId) {
-    return Response.redirect(new URL("/support#lost-key", request.url), 307);
+    // Not set up yet: send them to the contact details instead.
+    return Response.redirect(new URL("/support#contact", request.url), 307);
   }
 
   const portal =
