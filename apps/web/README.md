@@ -29,7 +29,7 @@ src/
     pixel-cascade.tsx    Pixels piling up from the corners of the final call to action
     card.tsx             Hairline cards, their 001-style numbers, and framed illustrations
     buy-button.tsx       The square Buy button, secondary links and corner marks
-    logo.tsx             The "localbolo" wordmark, LocalBolo's logo
+    logo.tsx             The wordmark (the logo) and the monogram
     pill.tsx             The dictation pill, matching the Mac app's design
   lib/
     site.ts              Name, price, refund window, contact, purchase link, footer links
@@ -37,6 +37,7 @@ src/
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
     wordmark.ts          The wordmark as one SVG path, traced from the logo artwork
+    monogram.ts          The monogram as one SVG path
     pixel-icons.ts       Every pixel-art icon, drawn as text, including a pixel wordmark
     metadata.ts          Per-page title, canonical URL and link previews
     structured-data.ts   schema.org data for the home page
@@ -50,9 +51,11 @@ pricing, FAQ and a full footer. The details follow Supermemory: square corners, 
 cards numbered 001, 002…, framed illustrations with corner marks, monospaced labels and
 square buttons.
 
-The logo is the "localbolo" wordmark on its own, with no symbol beside it. It's drawn in the
-text color, black on light backgrounds and white on dark ones; `docs/images/wordmark.svg` and
-`wordmark-white.svg` are standalone copies.
+The logo is the "localbolo" wordmark on its own, with no symbol beside it. Wherever a single
+icon is needed, such as the Buy button's icon box, the site uses the monogram: the "a" from the
+wordmark, which is also the app icon, menu bar icon and favicon. Both are drawn in the text
+color, black on light backgrounds and white on dark ones. The source SVGs are in `brand/` at the
+root of the repository.
 
 Black, white and one blue. **Every pixel is square**: the hero waveform, the section edges,
 the background grids (`pixel-grid`) and Geist Pixel, the font used for accents. Type is

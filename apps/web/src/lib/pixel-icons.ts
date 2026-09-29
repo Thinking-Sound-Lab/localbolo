@@ -2,17 +2,6 @@ import type { PixelArtRows } from "@/lib/pixels";
 
 /** The site's pixel-art icons: `#` is a pixel, `+` is a blue accent pixel. */
 export const pixelIcons = {
-  /** A waveform, loudest in the middle, like the app's menu bar icon. */
-  waveform: [
-    "....+....",
-    "..#.+.#..",
-    "#.#.+.#.#",
-    "#.#.+.#.#",
-    "#.#.+.#.#",
-    "..#.+.#..",
-    "....+....",
-  ],
-
   /**
    * The "localbolo" wordmark rebuilt from square pixels, 128 wide, for large
    * decorative use. Generated from the logo artwork.
@@ -168,17 +157,6 @@ export const pixelIcons = {
     ".#.##..#.",
     ".#######.",
   ],
-  lock: [
-    "..#####..",
-    ".#.....#.",
-    ".#.....#.",
-    "#########",
-    "####+####",
-    "####+####",
-    "#########",
-    "#########",
-    ".........",
-  ],
 
   // Small marks.
   check: [
@@ -196,14 +174,5 @@ export const pixelIcons = {
     "#####",
     "..#..",
     "..#..",
-  ],
-  arrow: [
-    "...#...",
-    "....#..",
-    ".....#.",
-    "#######",
-    ".....#.",
-    "....#..",
-    "...#...",
   ],
 } satisfies Record<string, PixelArtRows>;

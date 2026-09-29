@@ -65,11 +65,12 @@ struct MenuBarContent: View {
     }
 }
 
-/// The menu bar icon, which fills in while LocalBolo is listening.
+/// The menu bar icon: LocalBolo's monogram, which fills in while listening.
+/// Both are template images, so macOS tints them to match the menu bar.
 struct MenuBarIcon: View {
     let dictation: DictationController
 
     var body: some View {
-        Image(systemName: dictation.phase == .listening ? "waveform.circle.fill" : "waveform")
+        Image(dictation.phase == .listening ? "MenuBarIconListening" : "MenuBarIcon")
     }
 }

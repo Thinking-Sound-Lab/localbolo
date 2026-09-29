@@ -3,9 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { BrowserIcon, ChatIcon, MailIcon, NotesIcon, TerminalIcon } from "@/components/app-icons";
 import { FnKey } from "@/components/fn-key";
+import { Monogram } from "@/components/logo";
 import { Pill, type PillState } from "@/components/pill";
-import { PixelArt } from "@/components/pixel-art";
-import { pixelIcons } from "@/lib/pixel-icons";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 type Scene = {
@@ -97,7 +96,7 @@ export function HeroDemo() {
 
   return (
     <div className="relative mx-auto aspect-[4/5] w-full max-w-5xl overflow-hidden bg-blue shadow-[0_40px_80px_-32px_rgba(10,10,10,0.55)] ring-1 ring-ink/10 pixel-grid [--pixel-color:rgb(255_255_255/0.2)] sm:aspect-[16/10]">
-      <MenuBar />
+      <MenuBar isListening={phase === "listening"} />
 
       {/* App window */}
       <div className="absolute inset-x-[6%] top-[11%] bottom-[23%] flex flex-col overflow-hidden rounded-lg bg-white shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)] sm:inset-x-[14%] sm:bottom-[20%]">
@@ -148,10 +147,17 @@ export function HeroDemo() {
   );
 }
 
-function MenuBar() {
+/** The top of the screen, with LocalBolo's menu bar icon filling in while it listens, as in the app. */
+function MenuBar({ isListening }: { isListening: boolean }) {
   return (
     <div className="absolute inset-x-0 top-0 flex h-7 items-center justify-end gap-4 bg-white/10 px-4 font-mono text-xs text-white/85 backdrop-blur-md">
-      <PixelArt art={pixelIcons.waveform} className="h-[14px] w-[18px] text-white" accentClassName="fill-white" />
+      {isListening ? (
+        <span className="grid size-[17px] place-items-center rounded-full bg-white text-blue">
+          <Monogram className="h-[9px]" />
+        </span>
+      ) : (
+        <Monogram className="h-[14px] text-white" />
+      )}
       <span>Mon 9:41</span>
     </div>
   );

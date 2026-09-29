@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { PixelArt } from "@/components/pixel-art";
+import { Monogram } from "@/components/logo";
 import { cx } from "@/lib/cx";
-import { pixelIcons } from "@/lib/pixel-icons";
 import { site } from "@/lib/site";
 
 const sizes = {
@@ -23,8 +22,8 @@ const tones = {
 };
 
 /**
- * The call to action: buy LocalBolo. A square button with an arrow in a box
- * at its start and a monospaced label.
+ * The call to action: buy LocalBolo. A square button with the monogram in a
+ * box at its start and a monospaced label.
  */
 export function BuyButton({
   size = "lg",
@@ -40,17 +39,14 @@ export function BuyButton({
       href={site.purchaseUrl}
       rel="nofollow"
       className={cx(
-        "group inline-flex items-stretch border font-mono tracking-[0.08em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
+        "inline-flex items-stretch border font-mono tracking-[0.08em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
         sizes[size].button,
         tones[tone].button,
         className,
       )}
     >
       <span className={cx("grid shrink-0 place-items-center", sizes[size].icon, tones[tone].icon)}>
-        <PixelArt
-          art={pixelIcons.arrow}
-          className="size-[14px] transition-transform group-hover:translate-x-0.5"
-        />
+        <Monogram className={size === "sm" ? "h-3.5" : "h-[18px]"} />
       </span>
       <span className={cx("flex items-center whitespace-nowrap", sizes[size].label)}>
         Buy for {site.price.label}
