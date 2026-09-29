@@ -143,6 +143,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm test
       - run: pnpm build
 
   # The single check that branch protection and the merge queue require. Skipped

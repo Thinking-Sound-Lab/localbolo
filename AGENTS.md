@@ -16,7 +16,7 @@ xcodebuild test -project LocalBolo.xcodeproj -scheme "LocalBolo Dev" \
   -destination 'platform=macOS,arch=arm64' -skipPackagePluginValidation -quiet
 
 # Website (from apps/web)
-pnpm lint && pnpm build
+pnpm lint && pnpm test && pnpm build
 ```
 
 If you change code that only compiles in Release (the `LocalBolo` scheme), also build it:

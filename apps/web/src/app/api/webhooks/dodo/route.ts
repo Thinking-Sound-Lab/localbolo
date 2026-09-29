@@ -1,6 +1,5 @@
-import type DodoPayments from "dodopayments";
 import { dodoClient } from "@/lib/dodo";
-import { purchasesDatabase, recordPurchase } from "@/lib/purchases";
+import { purchaseChange, purchasesDatabase, recordPurchase } from "@/lib/purchases";
 
 /**
  * Receives Dodo Payments webhooks (Dashboard › Developer › Webhooks).
@@ -56,23 +55,3 @@ export async function POST(request: Request) {
   return Response.json({ received: true });
 }
 
-/** The purchase an event changes, if it changes one. */
-function purchaseChange(event: DodoPayments.UnwrapWebhookEvent) {
-  switch (event.type) {
-    case "payment.succeeded":
-    case "refund.succeeded":
-    case "dispute.opened":
-    case "dispute.challenged":
-    case "dispute.won":
-    case "dispute.lost":
-    case "dispute.accepted":
-    case "dispute.cancelled":
-    case "dispute.expired":
-      return { paymentId: event.data.payment_id };
-    case "license_key.created":
-      // Keys made by hand in the dashboard have no payment.
-      return event.data.payment_id ? { paymentId: event.data.payment_id, licenseKeyId: event.data.id } : undefined;
-    default:
-      return undefined;
-  }
-}

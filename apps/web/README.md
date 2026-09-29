@@ -7,6 +7,7 @@ pnpm install
 pnpm dev     # http://localhost:3000
 pnpm build   # production build
 pnpm lint
+pnpm test    # unit tests (*.test.ts), with Node's built-in test runner
 ```
 
 ## Structure
@@ -109,7 +110,8 @@ still builds and runs.
 Everyone who buys LocalBolo gets a row in the `purchases` table in Supabase: name, email,
 country, amount and currency, when they bought, Dodo's payment and customer IDs, and the ID of
 their license key (never the key itself). `status` is `paid`, `partially_refunded`, `refunded`,
-`disputed` (a chargeback is open) or `charged_back` (the bank returned the money). Browse it in
+`disputed` (a chargeback is open) or `charged_back` (the bank returned the money, including
+when a dispute expired without a response). Browse it in
 Supabase's Table Editor, or query it in the SQL Editor:
 
 ```sql
@@ -117,8 +119,9 @@ select email, name, country, purchased_at, status from purchases order by purcha
 ```
 
 The webhook writes it, and Dodo stays the source of truth. Each event fetches the payment
-fresh from Dodo and writes its current state, so events that arrive twice, late or out of order
-still leave the right row. If a write fails, the webhook answers with an error and Dodo retries.
+fresh from Dodo and writes its current state, then looks again and writes again if the payment
+changed meanwhile, so events that arrive twice, late, out of order or at the same time still
+leave the right row. If a write fails, the webhook answers with an error and Dodo retries.
 
 Only the website's server can read or write the table, with `SUPABASE_SECRET_KEY`: row level
 security is on with no policies, so the publishable key sees nothing.
