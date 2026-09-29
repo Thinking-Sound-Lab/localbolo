@@ -89,6 +89,36 @@ struct LicenseManagerTests {
         #expect(license.isActivated)
     }
 
+    @Test func checksADateInTheFutureStraightAway() async {
+        storeActivation(checkedDaysAgo: -365)
+        let license = makeManager(FakeLicenseServer(["licenses/validate": .init(status: 404, body: "{}")]))
+
+        await license.revalidateIfDue()
+
+        #expect(!license.isActivated)
+    }
+
+    @Test func aCheckInFlightDoesNotUndoDeactivation() async {
+        storeActivation(checkedDaysAgo: 15)
+        let (validateGate, openGate) = AsyncStream<Void>.makeStream()
+        let server = FakeLicenseServer(
+            [
+                "licenses/validate": .init(status: 200, body: #"{"valid":true}"#),
+                "licenses/deactivate": .init(status: 200, body: ""),
+            ],
+            validateGate: validateGate
+        )
+        let license = makeManager(server)
+
+        let check = Task { await license.revalidateIfDue() }
+        while server.requests.isEmpty { await Task.yield() }
+        await license.deactivate()
+        openGate.yield()
+        await check.value
+
+        #expect(!license.isActivated)
+    }
+
     @Test func doesNotCheckAgainSoon() async {
         storeActivation(checkedDaysAgo: 3)
         let server = FakeLicenseServer(["licenses/validate": .init(status: 200, body: #"{"valid":false}"#)])
@@ -151,11 +181,14 @@ private final class FakeLicenseServer: Sendable {
 
     private let responses: [String: Response]
     private let isOffline: Bool
+    /// When set, validation requests wait for a value from this stream before answering.
+    private let validateGate: AsyncStream<Void>?
     private let recorded = Mutex<[URLRequest]>([])
 
-    init(_ responses: [String: Response] = [:], isOffline: Bool = false) {
+    init(_ responses: [String: Response] = [:], isOffline: Bool = false, validateGate: AsyncStream<Void>? = nil) {
         self.responses = responses
         self.isOffline = isOffline
+        self.validateGate = validateGate
     }
 
     var requests: [URLRequest] { recorded.withLock { $0 } }
@@ -166,6 +199,9 @@ private final class FakeLicenseServer: Sendable {
             if isOffline { throw URLError(.notConnectedToInternet) }
 
             let path = String(request.url!.path().dropFirst())
+            if path == "licenses/validate", let validateGate {
+                for await _ in validateGate { break }
+            }
             let response = responses[path] ?? Response(status: 404, body: "{}")
             let http = HTTPURLResponse(url: request.url!, statusCode: response.status, httpVersion: nil, headerFields: nil)!
             return (Data(response.body.utf8), http)

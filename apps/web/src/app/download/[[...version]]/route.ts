@@ -1,4 +1,4 @@
-import { diskImageUrl, findRelease } from "@/lib/releases";
+import { downloadDiskImage, findRelease } from "@/lib/releases";
 import { site } from "@/lib/site";
 
 /**
@@ -13,11 +13,10 @@ export async function GET(_request: Request, context: RouteContext<"/download/[[
     return unavailable(version ? `There's no ${site.name} ${version[0]}.` : "There's no version to download yet.", 404);
   }
 
-  const url = await diskImageUrl(release);
-  if (!url) return unavailable("Downloads aren't available right now. Please try again in a minute.", 503);
-
-  // The URL is signed and expires in minutes, so send people to it without caching.
-  return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "no-store" } });
+  return (
+    (await downloadDiskImage(release)) ??
+    unavailable("Downloads aren't available right now. Please try again in a minute.", 503)
+  );
 }
 
 function unavailable(message: string, status: number) {

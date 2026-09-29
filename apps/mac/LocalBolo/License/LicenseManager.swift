@@ -97,24 +97,36 @@ final class LicenseManager {
     /// Asks Dodo whether the key is still valid if it's been a while. Only a
     /// definite "no" removes the activation; errors leave it in place.
     func revalidateIfDue() async {
-        guard var activation, let client,
-              now().timeIntervalSince(activation.lastValidated) >= Self.revalidationInterval
-        else { return }
+        guard var activation, let client, isRevalidationDue(activation) else { return }
 
+        let isValid: Bool
         do throws(LicenseError) {
-            if try await client.validate(key: activation.licenseKey, instanceID: activation.instanceID) {
-                activation.lastValidated = now()
-                save(activation)
-            } else {
-                Logger.license.notice("License key is no longer valid; removing the activation")
-                save(nil)
-            }
+            isValid = try await client.validate(key: activation.licenseKey, instanceID: activation.instanceID)
         } catch .notFound, .inactive {
-            Logger.license.notice("License key is no longer valid; removing the activation")
-            save(nil)
+            isValid = false
         } catch {
             Logger.license.info("Couldn't re-check the license: \(error.localizedDescription, privacy: .public)")
+            return
         }
+
+        // Someone may have deactivated this Mac, or entered another key, while
+        // the check was in flight. Its answer is about the old activation only.
+        guard self.activation?.instanceID == activation.instanceID else { return }
+
+        if isValid {
+            activation.lastValidated = now()
+            save(activation)
+        } else {
+            Logger.license.notice("License key is no longer valid; removing the activation")
+            save(nil)
+        }
+    }
+
+    /// Due every two weeks. A date in the future can only come from editing the
+    /// preferences by hand, so it's due straight away rather than trusted.
+    private func isRevalidationDue(_ activation: Activation) -> Bool {
+        let sinceLastCheck = now().timeIntervalSince(activation.lastValidated)
+        return sinceLastCheck < 0 || sinceLastCheck >= Self.revalidationInterval
     }
 
     private func save(_ activation: Activation?) {

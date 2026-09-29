@@ -80,10 +80,11 @@ export async function findRelease(version?: string) {
 }
 
 /**
- * A short-lived URL for the release's disk image. GitHub answers the asset
- * request with a redirect to signed storage, which works without the token.
+ * A response that downloads the release's disk image, or null if GitHub
+ * can't provide it. GitHub usually redirects to short-lived signed storage,
+ * which works without the token; sometimes it sends the file itself.
  */
-export async function diskImageUrl(release: Release) {
+export async function downloadDiskImage(release: Release) {
   const headers = githubHeaders("application/octet-stream");
   if (!headers) return null;
 
@@ -91,7 +92,25 @@ export async function diskImageUrl(release: Release) {
     `https://api.github.com/repos/${repository}/releases/assets/${release.diskImageId}`,
     { headers, redirect: "manual", cache: "no-store" },
   );
-  return response.headers.get("location");
+
+  const location = response.headers.get("location");
+  if (response.status >= 300 && response.status < 400 && location) {
+    // The URL expires in minutes, so nothing should cache the redirect.
+    return new Response(null, { status: 302, headers: { Location: location, "Cache-Control": "no-store" } });
+  }
+  if (response.ok && response.body) {
+    const length = response.headers.get("content-length");
+    return new Response(response.body, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${diskImageName}"`,
+        ...(length ? { "Content-Length": length } : {}),
+      },
+    });
+  }
+
+  console.error(`Couldn't download ${release.tag}'s disk image: ${response.status}`);
+  return null;
 }
 
 function githubHeaders(accept: string) {
