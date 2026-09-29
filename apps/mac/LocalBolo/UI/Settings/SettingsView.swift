@@ -95,8 +95,17 @@ private struct LicenseSettingsView: View {
             Section {
                 if let activation = app.license.activation {
                     LabeledContent("Status") {
-                        Label("Activated on this Mac", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                        if app.license.status == .active {
+                            Label("Activated on this Mac", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            HStack {
+                                Label("Needs a check", systemImage: "exclamationmark.circle.fill")
+                                    .foregroundStyle(.orange)
+                                Button("Check Now") { Task { await app.license.verifyNow() } }
+                                    .disabled(app.license.isWorking)
+                            }
+                        }
                     }
                     LabeledContent("License key") {
                         Text(activation.licenseKey)
@@ -117,8 +126,11 @@ private struct LicenseSettingsView: View {
                     }
                 }
             } footer: {
-                Text("Your license key is in the email from Dodo Payments. Deactivating this Mac frees it up to use on another one.")
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your license key is in the email from Dodo Payments. Deactivating this Mac frees it up to use on another one. LocalBolo checks the key every two weeks, and needs to reach Dodo at least once a month.")
+                    Link("Lost your key?", destination: AppLinks.findLicense)
+                }
+                .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

@@ -15,15 +15,19 @@ struct LicenseManagerTests {
 
         await license.activate(key: "  LB-1234-ABCD \n")
 
-        #expect(license.activation == Activation(licenseKey: "LB-1234-ABCD", instanceID: "lki_mac", lastValidated: today))
+        #expect(license.activation == Activation(
+            licenseKey: "LB-1234-ABCD", instanceID: "lki_mac", machineID: thisMac, lastValidated: today, latestSeen: today
+        ))
+        #expect(license.isLicensed)
         #expect(license.errorMessage == nil)
         let body = try #require(server.requests.first?.httpBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
         #expect(json["license_key"] == "LB-1234-ABCD")
-        #expect(json["name"]?.isEmpty == false)
+        // The Mac's name, plus its anonymous ID so Macs with the same name can be told apart.
+        #expect(json["name"]?.hasSuffix(" · \(thisMac.prefix(8))") == true)
 
         // A fresh launch picks the activation up again.
-        #expect(makeManager(server).isActivated)
+        #expect(makeManager(server).isLicensed)
     }
 
     @Test(arguments: [
@@ -37,7 +41,7 @@ struct LicenseManagerTests {
 
         await license.activate(key: "LB-1234-ABCD")
 
-        #expect(!license.isActivated)
+        #expect(license.status == .notActivated)
         #expect(license.errorMessage == error.errorDescription)
     }
 
@@ -46,7 +50,7 @@ struct LicenseManagerTests {
 
         await license.activate(key: "LB-1234-ABCD")
 
-        #expect(!license.isActivated)
+        #expect(license.status == .notActivated)
         #expect(license.errorMessage == LicenseError.offline.errorDescription)
     }
 
@@ -58,8 +62,8 @@ struct LicenseManagerTests {
 
         await license.revalidateIfDue()
 
-        #expect(!license.isActivated)
-        #expect(!makeManager(FakeLicenseServer()).isActivated)
+        #expect(license.status == .notActivated)
+        #expect(makeManager(FakeLicenseServer()).status == .notActivated)
     }
 
     @Test func removesAKeyThatWasDisabled() async {
@@ -68,7 +72,7 @@ struct LicenseManagerTests {
 
         await license.revalidateIfDue()
 
-        #expect(!license.isActivated)
+        #expect(license.status == .notActivated)
     }
 
     @Test func recordsASuccessfulCheck() async {
@@ -80,13 +84,50 @@ struct LicenseManagerTests {
         #expect(license.activation?.lastValidated == today)
     }
 
-    @Test func keepsTheKeyWhenOffline() async {
-        storeActivation(checkedDaysAgo: 40)
+    @Test func keepsWorkingOfflineForAMonth() async {
+        storeActivation(checkedDaysAgo: 29)
         let license = makeManager(FakeLicenseServer(isOffline: true))
 
         await license.revalidateIfDue()
 
-        #expect(license.isActivated)
+        #expect(license.isLicensed)
+    }
+
+    @Test func asksToConnectAfterAMonthOffline() async {
+        storeActivation(checkedDaysAgo: 31)
+        let license = makeManager(FakeLicenseServer(isOffline: true))
+
+        await license.revalidateIfDue()
+
+        #expect(license.status == .needsVerification)
+        #expect(!license.isLicensed)
+    }
+
+    @Test func aSuccessfulCheckEndsTheWait() async {
+        storeActivation(checkedDaysAgo: 45)
+        let license = makeManager(FakeLicenseServer(["licenses/validate": .init(status: 200, body: #"{"valid":true}"#)]))
+
+        await license.verifyNow()
+
+        #expect(license.isLicensed)
+        #expect(license.activation?.lastValidated == today)
+    }
+
+    @Test func turningTheClockBackDoesNotStretchTheMonth() {
+        // Last checked 31 days before the latest time LocalBolo saw; the clock now reads earlier.
+        storeActivation(checkedDaysAgo: 31, latestSeenDaysAgo: 0)
+        let license = makeManager(FakeLicenseServer(), now: today.addingTimeInterval(-20 * 24 * 60 * 60))
+
+        #expect(license.status == .needsVerification)
+    }
+
+    @Test func ignoresAnActivationFromAnotherMac() {
+        storeActivation(checkedDaysAgo: 1, machineID: "another-mac")
+
+        let license = makeManager(FakeLicenseServer())
+
+        #expect(license.status == .notActivated)
+        #expect(defaults.data(forKey: "licenseActivation") == nil)
     }
 
     @Test func checksADateInTheFutureStraightAway() async {
@@ -95,7 +136,7 @@ struct LicenseManagerTests {
 
         await license.revalidateIfDue()
 
-        #expect(!license.isActivated)
+        #expect(license.status == .notActivated)
     }
 
     @Test func aCheckInFlightDoesNotUndoDeactivation() async {
@@ -116,7 +157,7 @@ struct LicenseManagerTests {
         openGate.yield()
         await check.value
 
-        #expect(!license.isActivated)
+        #expect(license.status == .notActivated)
     }
 
     @Test func doesNotCheckAgainSoon() async {
@@ -126,7 +167,7 @@ struct LicenseManagerTests {
 
         await license.revalidateIfDue()
 
-        #expect(license.isActivated)
+        #expect(license.isLicensed)
         #expect(server.requests.isEmpty)
     }
 
@@ -140,7 +181,7 @@ struct LicenseManagerTests {
 
         await license.deactivate()
 
-        #expect(!license.isActivated)
+        #expect(license.status == .notActivated)
         let body = try #require(server.requests.first?.httpBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
         #expect(json["license_key_instance_id"] == "lki_mac")
@@ -152,21 +193,28 @@ struct LicenseManagerTests {
 
         await license.deactivate()
 
-        #expect(license.isActivated)
+        #expect(license.isLicensed)
         #expect(license.errorMessage == LicenseError.offline.errorDescription)
     }
 
     // MARK: - Helpers
 
-    private func makeManager(_ server: FakeLicenseServer) -> LicenseManager {
-        LicenseManager(client: server.client, defaults: defaults, now: { [today] in today })
+    private let thisMac = "0123456789abcdef"
+
+    private func makeManager(_ server: FakeLicenseServer, now: Date? = nil) -> LicenseManager {
+        let date = now ?? today
+        return LicenseManager(client: server.client, defaults: defaults, now: { date }, machineID: thisMac)
     }
 
-    private func storeActivation(checkedDaysAgo days: Double) {
+    private func storeActivation(checkedDaysAgo days: Double, latestSeenDaysAgo seenDays: Double? = nil, machineID: String? = nil) {
+        let day: TimeInterval = 24 * 60 * 60
+        let lastValidated = today.addingTimeInterval(-days * day)
         let activation = Activation(
             licenseKey: "LB-1234-ABCD",
             instanceID: "lki_mac",
-            lastValidated: today.addingTimeInterval(-days * 24 * 60 * 60)
+            machineID: machineID ?? thisMac,
+            lastValidated: lastValidated,
+            latestSeen: seenDays.map { today.addingTimeInterval(-$0 * day) } ?? lastValidated
         )
         defaults.set(try! JSONEncoder().encode(activation), forKey: "licenseActivation")
     }

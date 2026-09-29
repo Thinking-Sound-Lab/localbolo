@@ -6,6 +6,7 @@ import { pixelIcons } from "@/lib/pixel-icons";
 import { site } from "@/lib/site";
 
 const included = [
+  `Use it on up to ${site.macsPerLicense} of your Macs`,
   "Unlimited dictation in every app",
   "Every speech model: Parakeet and Whisper",
   "On-device transcript cleanup",

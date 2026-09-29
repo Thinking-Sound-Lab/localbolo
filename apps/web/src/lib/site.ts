@@ -21,6 +21,10 @@ export const site = {
   },
   /** How long after buying a customer can ask for a full refund. */
   refundDays: 7,
+  /** How many Macs one license key can be active on at a time. Keep in step with the activation limit in Dodo. */
+  macsPerLicense: 2,
+  /** Where buyers look up a lost license key (app/license: Dodo's customer portal). */
+  findLicenseUrl: "/license",
   requirements: "macOS 15 or later · Apple Silicon",
 } as const;
 
@@ -40,6 +44,7 @@ export const footerLinks = [
     title: "Support",
     links: [
       { label: "Help & contact", href: "/support" },
+      { label: "Find my license key", href: "/license", prefetch: false },
       { label: "System requirements", href: "/support#requirements" },
       { label: "FAQ", href: "/#faq" },
       { label: "Changelog", href: "/changelog" },

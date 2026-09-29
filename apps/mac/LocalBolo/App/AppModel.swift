@@ -38,10 +38,10 @@ final class AppModel {
         self.pill = PillController(dictation: dictation, settings: settings)
     }
 
-    /// True until the license is activated, every permission is granted and a
+    /// True until the license is active, every permission is granted and a
     /// speech model is on disk.
     var needsSetup: Bool {
-        !license.isActivated || !permissions.allGranted || !speechModels.isInstalled(speechModels.activeModel)
+        !license.isLicensed || !permissions.allGranted || !speechModels.isInstalled(speechModels.activeModel)
     }
 
     func start() {

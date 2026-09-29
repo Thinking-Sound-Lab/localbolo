@@ -1,7 +1,8 @@
 /*
  * Published versions of the Mac app, read from the repository's GitHub
- * releases. The repository is private, so requests use a read-only token
- * (GITHUB_RELEASES_TOKEN) and the site hands out downloads itself.
+ * releases. With a read-only token (GITHUB_RELEASES_TOKEN) this works for a
+ * private repository and isn't subject to GitHub's low limit for anonymous
+ * requests; without one, the repository must be public.
  */
 
 const repository = "Thinking-Sound-Lab/localbolo";
@@ -26,7 +27,7 @@ export type Release = {
   version: string;
   publishedAt: string;
   notesHtml: string;
-  diskImageId: number;
+  diskImage: { id: number; url: string };
   /** Missing for releases made before the app could update itself. */
   update?: SparkleUpdate;
 };
@@ -38,16 +39,13 @@ type GitHubRelease = {
   published_at: string | null;
   body: string | null;
   body_html?: string;
-  assets: { id: number; name: string }[];
+  assets: { id: number; name: string; browser_download_url: string }[];
 };
 
-/** Published releases, newest first. Empty when the token isn't set or GitHub can't be reached. */
+/** Published releases, newest first. Empty when GitHub can't be reached. */
 export async function listReleases(): Promise<Release[]> {
-  const headers = githubHeaders("application/vnd.github.full+json");
-  if (!headers) return [];
-
   const response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=30`, {
-    headers,
+    headers: githubHeaders("application/vnd.github.full+json"),
     next: { revalidate: releasesRevalidateSeconds },
   });
   if (!response.ok) {
@@ -65,7 +63,7 @@ export async function listReleases(): Promise<Release[]> {
         version: release.tag_name.replace(/^v/, ""),
         publishedAt: release.published_at,
         notesHtml: release.body_html ?? "",
-        diskImageId: diskImage.id,
+        diskImage: { id: diskImage.id, url: diskImage.browser_download_url },
         update: parseSparkleComment(release.body ?? ""),
       },
     ];
@@ -81,16 +79,19 @@ export async function findRelease(version?: string) {
 
 /**
  * A response that downloads the release's disk image, or null if GitHub
- * can't provide it. GitHub usually redirects to short-lived signed storage,
- * which works without the token; sometimes it sends the file itself.
+ * can't provide it.
  */
 export async function downloadDiskImage(release: Release) {
-  const headers = githubHeaders("application/octet-stream");
-  if (!headers) return null;
+  // Without a token, the repository is public and its download links work for anyone.
+  if (!process.env.GITHUB_RELEASES_TOKEN) {
+    return new Response(null, { status: 302, headers: { Location: release.diskImage.url } });
+  }
 
+  // With a token, ask the API, which works for private repositories too. It
+  // usually redirects to short-lived signed storage; sometimes it sends the file.
   const response = await fetch(
-    `https://api.github.com/repos/${repository}/releases/assets/${release.diskImageId}`,
-    { headers, redirect: "manual", cache: "no-store" },
+    `https://api.github.com/repos/${repository}/releases/assets/${release.diskImage.id}`,
+    { headers: githubHeaders("application/octet-stream"), redirect: "manual", cache: "no-store" },
   );
 
   const location = response.headers.get("location");
@@ -113,13 +114,12 @@ export async function downloadDiskImage(release: Release) {
   return null;
 }
 
-function githubHeaders(accept: string) {
+function githubHeaders(accept: string): Record<string, string> {
   const token = process.env.GITHUB_RELEASES_TOKEN;
-  if (!token) return null;
   return {
     Accept: accept,
-    Authorization: `Bearer ${token}`,
     "X-GitHub-Api-Version": "2022-11-28",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 

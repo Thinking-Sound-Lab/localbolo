@@ -10,7 +10,7 @@ struct OnboardingView: View {
 
     var body: some View {
         Group {
-            if app.license.isActivated {
+            if app.license.isLicensed {
                 setup
                     .transition(.opacity.combined(with: .move(edge: .trailing)))
             } else {
@@ -19,7 +19,7 @@ struct OnboardingView: View {
             }
         }
         .frame(width: 580)
-        .animation(.default, value: app.license.isActivated)
+        .animation(.default, value: app.license.isLicensed)
         .onAppear { NSApp.activate() }
         .task { await watchGlobeKeySetting() }
     }

@@ -62,8 +62,13 @@ final class DictationController {
     private func beginListening() {
         guard phase == .idle || phase.isNotice else { return }
 
-        guard license.isActivated else {
+        switch license.status {
+        case .active:
+            break
+        case .notActivated:
             return showNotice("Enter your license key in the Setup Guide")
+        case .needsVerification:
+            return showNotice("Connect to the internet to verify your license")
         }
 
         switch permissions.microphone {

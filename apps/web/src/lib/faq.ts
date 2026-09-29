@@ -16,6 +16,15 @@ export const faq: { question: string; answer: string }[] = [
       "Download LocalBolo from the link after checkout, or any time at localbolo.app/download. Open it and enter the license key from the email Dodo Payments sends you. You only do that once per Mac.",
   },
   {
+    question: "Can I use it on more than one Mac?",
+    answer: `Yes. One license works on up to ${site.macsPerLicense} of your Macs at a time. To move it to a new Mac, deactivate the old one in LocalBolo's Settings › License. If that Mac is lost or broken, email us and we'll free it up.`,
+  },
+  {
+    question: "I lost my license key. How do I find it?",
+    answer:
+      "Go to localbolo.app/license and enter the email you bought LocalBolo with. You'll get a sign-in link to a page that shows your key.",
+  },
+  {
     question: "Does it update itself?",
     answer:
       "Yes. LocalBolo checks for updates once a day and installs a new version with one click. You can turn automatic checks off in Settings.",
@@ -28,7 +37,7 @@ export const faq: { question: string; answer: string }[] = [
   {
     question: "Does it need an internet connection?",
     answer:
-      "Only to activate your license key and download the speech model you choose. After that, dictation works completely offline. When you're online, LocalBolo also checks for updates and re-checks your license now and then.",
+      "Only to activate your license key and download the speech model you choose. After that, dictation works offline. LocalBolo re-checks your license every two weeks when you're online, and needs to reach the internet at least once a month to keep working.",
   },
   {
     question: "Why does it need Accessibility access?",

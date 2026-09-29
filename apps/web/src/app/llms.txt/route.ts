@@ -20,7 +20,8 @@ ${site.name} is a dictation app for Mac. Hold the fn key, speak, and let go: you
 - Requirements: ${site.requirements}
 - Speech models: ${speechModels.map((model) => `${model.name} (${model.megabytes} MB)`).join(", ")}
 - Optional transcript cleanup with an on-device language model (Qwen 2.5 1.5B)
-- Download: ${site.url}${site.downloadUrl}. It's activated once with the license key from the purchase email, and it updates itself.
+- Download: ${site.url}${site.downloadUrl}. It's activated once with the license key from the purchase email, works on up to ${site.macsPerLicense} Macs per license, and updates itself.
+- Lost license key: ${site.url}${site.findLicenseUrl}
 - Made by ${site.company}
 
 ## Pages

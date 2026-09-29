@@ -39,10 +39,23 @@ const sections: DocSection[] = [
           the email from Dodo Payments you got after buying. You only enter it once per Mac.
         </p>
         <p>
-          Moving to a new Mac? Open Settings › License on the old one and choose Deactivate This
-          Mac, then enter the same key on the new one.
+          One license works on up to {site.macsPerLicense} Macs at a time. Moving to a new Mac?
+          Open Settings › License on the old one and choose Deactivate This Mac, then enter the
+          same key on the new one. If the old Mac is lost or broken, email {email} and we&apos;ll
+          free up its activation.
         </p>
       </>
+    ),
+  },
+  {
+    id: "lost-key",
+    title: "Lost your license key?",
+    content: (
+      <p>
+        Go to <a href={site.findLicenseUrl}>localbolo.app/license</a> and enter the email you bought{" "}
+        {site.name} with. You&apos;ll get a sign-in link to a page that shows your key. Still stuck?
+        Email {email}.
+      </p>
     ),
   },
   {
@@ -115,8 +128,9 @@ const sections: DocSection[] = [
     content: (
       <ul>
         <li>
-          Make sure your license key is activated. Click the menu bar icon: it says so if it
-          isn&apos;t.
+          Make sure your license key is activated, and that your Mac has been online in the last
+          month so LocalBolo could check it. Click the menu bar icon: it says if either needs
+          attention.
         </li>
         <li>Hold fn for at least a quarter of a second. Quick taps are ignored on purpose.</li>
         <li>

@@ -330,9 +330,29 @@ Then put the public key in `SPARKLE_PUBLIC_KEY`. Releases fail early without it,
 version could never update itself. Keep a backup of the private key: without it, you can't ship
 updates to existing installs.
 
-The app also asks for a license key the first time it opens, and re-checks it with Dodo
-Payments about every two weeks. Development builds use Dodo's test mode, so test-mode keys work
-there.
+### Licensing
+
+The app asks for a license key the first time it opens. Keys come from Dodo Payments, which
+enforces how many Macs each key can be active on at once (2, set on the product's License Key
+entitlement and shown on the website from `macsPerLicense` in `apps/web/src/lib/site.ts`).
+
+- **One activation per Mac.** Each activation records an anonymous ID for the Mac, a hash of its
+  hardware UUID ([`MachineIdentity`](apps/mac/LocalBolo/License/MachineIdentity.swift)).
+  Settings copied to another Mac, for example by Migration Assistant, don't carry the license.
+- **Re-checked every two weeks, required monthly.** The app validates the key and this Mac's
+  activation with Dodo every 14 days. If it can't for 30 days, it asks to connect once before
+  dictating again. Refunds disable the key in Dodo, so a refunded copy stops at its next check.
+  Turning the clock back doesn't extend the 30 days.
+- **Moving and recovering.** Settings › License deactivates a Mac. For a lost or broken Mac,
+  deactivate its activation in the Dodo dashboard (it's listed by the Mac's name and ID).
+  Buyers who lose their key use `localbolo.app/license`, Dodo's customer portal.
+
+Development builds use Dodo's test mode, so test-mode keys work there.
+
+Because the source is public, anyone can build a copy without the check; the license in
+[LICENSE.md](LICENSE.md) is what forbids using or sharing that. The check keeps honest buyers
+honest, stops keys being shared beyond their limit, and ends refunded copies, which is what
+license checks in any Mac app can realistically do.
 
 ## Troubleshooting
 
@@ -377,3 +397,10 @@ LocalBolo is built on excellent open source projects and models:
   [Qwen 3](https://huggingface.co/Qwen/Qwen3-0.6B) (Apache 2.0).
 - [swift-transformers](https://github.com/huggingface/swift-transformers) (Apache 2.0) provides
   the tokenizers.
+- [Sparkle](https://sparkle-project.org) (MIT) installs updates.
+
+## License
+
+LocalBolo is commercial software with public source code; see [LICENSE.md](LICENSE.md). You
+can read it, build it to evaluate it, and contribute to it, but everyday use needs a license
+key from [localbolo.app](https://localbolo.app), and builds can't be redistributed.

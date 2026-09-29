@@ -107,9 +107,11 @@ const sections: DocSection[] = [
           </li>
           <li>
             <strong>Your license.</strong> When you enter your license key, the app activates it with
-            Dodo Payments, sending the key and your Mac&apos;s name so you can tell your Macs apart.
-            About every two weeks, when you&apos;re online, it checks with Dodo that the key is still
-            valid. If a check can&apos;t go through, {site.name} keeps working.
+            Dodo Payments. It sends the key, your Mac&apos;s name, and an anonymous ID made from a
+            one-way hash of your Mac&apos;s hardware ID, so a license stays tied to the Macs you
+            activate. The hardware ID itself never leaves your Mac. Every two weeks, when
+            you&apos;re online, the app checks with Dodo that the key is still valid. If it
+            can&apos;t check for a month, it asks you to connect once before dictating again.
           </li>
           <li>
             <strong>Updates.</strong> Once a day, the app downloads a small list of versions from

@@ -7,30 +7,55 @@ nonisolated struct Activation: Codable, Equatable, Sendable {
     let licenseKey: String
     /// Dodo's ID for this Mac's activation (`lki_…`), needed to deactivate it.
     let instanceID: String
+    /// The Mac the key was activated on (`MachineIdentity`).
+    let machineID: String
     /// When Dodo last confirmed the key was still valid.
     var lastValidated: Date
+    /// The latest time LocalBolo has seen, so turning the clock back can't
+    /// stretch the time allowed offline.
+    var latestSeen: Date
 }
 
-/// The license that unlocks LocalBolo. It's activated once with the key from
-/// the purchase email, then quietly re-checked every couple of weeks so a
-/// refunded or deactivated key stops working. Being offline never locks
-/// anyone out.
+/// The license that unlocks LocalBolo on this Mac.
+///
+/// The buyer activates the key from their purchase email once. Each
+/// activation is tied to one Mac, and Dodo limits how many Macs a key can be
+/// active on. Every two weeks the app quietly re-checks the key, so a refunded
+/// or deactivated key stops working; if it can't get through for a month, it
+/// asks to connect once before dictating again.
 @Observable
 final class LicenseManager {
-    /// How long an activation goes between checks with Dodo: two weeks.
+    enum Status: Equatable {
+        case notActivated
+        case active
+        /// Activated, but too long since a successful check with Dodo.
+        case needsVerification
+    }
+
+    /// How often the app re-checks the key with Dodo: every two weeks.
     static let revalidationInterval: TimeInterval = 14 * 24 * 60 * 60
+    /// How long LocalBolo keeps working without a successful check: 30 days.
+    static let offlineAllowance: TimeInterval = 30 * 24 * 60 * 60
 
     private(set) var activation: Activation?
-    /// True while a request to Dodo is in flight.
+    /// True while a request the user asked for is in flight.
     private(set) var isWorking = false
-    /// Why the last activation or deactivation failed, for the UI.
+    /// Why the last activation, check or deactivation failed, for the UI.
     private(set) var errorMessage: String?
 
-    var isActivated: Bool { activation != nil }
+    var status: Status {
+        guard let activation else { return .notActivated }
+        let sinceLastCheck = effectiveNow(for: activation).timeIntervalSince(activation.lastValidated)
+        return sinceLastCheck < Self.offlineAllowance ? .active : .needsVerification
+    }
+
+    /// Whether dictation is unlocked.
+    var isLicensed: Bool { status == .active }
 
     @ObservationIgnored private let client: LicenseClient?
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let now: () -> Date
+    @ObservationIgnored private let machineID: String
     @ObservationIgnored private var revalidationLoop: Task<Void, Never>?
 
     /// The activation is kept in user defaults rather than the keychain: a
@@ -38,11 +63,25 @@ final class LicenseManager {
     /// rebuild of an ad-hoc signed development build.
     private static let defaultsKey = "licenseActivation"
 
-    init(client: LicenseClient? = .configured, defaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init) {
+    init(
+        client: LicenseClient? = .configured,
+        defaults: UserDefaults = .standard,
+        now: @escaping () -> Date = Date.init,
+        machineID: String = MachineIdentity.current
+    ) {
         self.client = client
         self.defaults = defaults
         self.now = now
-        activation = defaults.data(forKey: Self.defaultsKey).flatMap { try? JSONDecoder().decode(Activation.self, from: $0) }
+        self.machineID = machineID
+
+        let stored = defaults.data(forKey: Self.defaultsKey).flatMap { try? JSONDecoder().decode(Activation.self, from: $0) }
+        if let stored, stored.machineID != machineID {
+            // Settings copied from another Mac. That activation belongs to it.
+            Logger.license.notice("Ignoring an activation made on another Mac")
+            defaults.removeObject(forKey: Self.defaultsKey)
+        } else {
+            activation = stored
+        }
     }
 
     /// Re-checks the activation now if it's due, then about twice a day, since
@@ -50,6 +89,7 @@ final class LicenseManager {
     func start() {
         revalidationLoop = Task { [weak self] in
             while !Task.isCancelled {
+                self?.noteCurrentTime()
                 await self?.revalidateIfDue()
                 try? await Task.sleep(for: .seconds(12 * 60 * 60))
             }
@@ -66,10 +106,24 @@ final class LicenseManager {
         defer { isWorking = false }
 
         do {
-            let instanceID = try await client.activate(key: key, deviceName: Self.deviceName)
-            save(Activation(licenseKey: key, instanceID: instanceID, lastValidated: now()))
+            let instanceID = try await client.activate(key: key, deviceName: deviceName)
+            let date = now()
+            save(Activation(licenseKey: key, instanceID: instanceID, machineID: machineID, lastValidated: date, latestSeen: date))
             Logger.license.info("Activated this Mac")
         } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Checks the key with Dodo right away, for "Try Again" and "Verify Now".
+    func verifyNow() async {
+        guard let activation, !isWorking else { return }
+
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+
+        if let error = await check(activation) {
             errorMessage = error.localizedDescription
         }
     }
@@ -94,10 +148,27 @@ final class LicenseManager {
         Logger.license.info("Deactivated this Mac")
     }
 
-    /// Asks Dodo whether the key is still valid if it's been a while. Only a
-    /// definite "no" removes the activation; errors leave it in place.
+    /// Checks the key with Dodo if it's been two weeks, or if the clock has
+    /// been turned back since the last check. Errors are only logged: being
+    /// offline is fine until the 30-day allowance runs out.
     func revalidateIfDue() async {
-        guard var activation, let client, isRevalidationDue(activation) else { return }
+        guard let activation else { return }
+        let sinceLastCheck = now().timeIntervalSince(activation.lastValidated)
+        guard sinceLastCheck < 0 || effectiveNow(for: activation).timeIntervalSince(activation.lastValidated) >= Self.revalidationInterval
+        else { return }
+
+        if let error = await check(activation) {
+            Logger.license.info("Couldn't re-check the license: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    // MARK: - Private
+
+    /// Asks Dodo whether `activation` is still valid and records the answer:
+    /// a yes renews it, a definite no removes it. Returns why the question
+    /// couldn't be answered, if it couldn't.
+    private func check(_ activation: Activation) async -> LicenseError? {
+        guard let client else { return .unexpectedResponse }
 
         let isValid: Bool
         do throws(LicenseError) {
@@ -105,28 +176,35 @@ final class LicenseManager {
         } catch .notFound, .inactive {
             isValid = false
         } catch {
-            Logger.license.info("Couldn't re-check the license: \(error.localizedDescription, privacy: .public)")
-            return
+            return error
         }
 
         // Someone may have deactivated this Mac, or entered another key, while
         // the check was in flight. Its answer is about the old activation only.
-        guard self.activation?.instanceID == activation.instanceID else { return }
+        guard var current = self.activation, current.instanceID == activation.instanceID else { return nil }
 
         if isValid {
-            activation.lastValidated = now()
-            save(activation)
+            let date = now()
+            current.lastValidated = date
+            current.latestSeen = max(current.latestSeen, date)
+            save(current)
         } else {
             Logger.license.notice("License key is no longer valid; removing the activation")
             save(nil)
+            errorMessage = LicenseError.inactive.errorDescription
         }
+        return nil
     }
 
-    /// Due every two weeks. A date in the future can only come from editing the
-    /// preferences by hand, so it's due straight away rather than trusted.
-    private func isRevalidationDue(_ activation: Activation) -> Bool {
-        let sinceLastCheck = now().timeIntervalSince(activation.lastValidated)
-        return sinceLastCheck < 0 || sinceLastCheck >= Self.revalidationInterval
+    /// The current time, or the latest time seen if the clock has gone back.
+    private func effectiveNow(for activation: Activation) -> Date {
+        max(now(), activation.latestSeen)
+    }
+
+    private func noteCurrentTime() {
+        guard var activation, now() > activation.latestSeen else { return }
+        activation.latestSeen = now()
+        save(activation)
     }
 
     private func save(_ activation: Activation?) {
@@ -138,8 +216,9 @@ final class LicenseManager {
         }
     }
 
-    /// The name this Mac's activation is listed under, such as "Priya's MacBook Air".
-    private static var deviceName: String {
-        Host.current().localizedName ?? "Mac"
+    /// How this Mac is listed among the key's activations, such as "Priya's
+    /// MacBook Air · 3f9a2c1b", so the buyer and support can tell Macs apart.
+    private var deviceName: String {
+        "\(Host.current().localizedName ?? "Mac") · \(machineID.prefix(8))"
     }
 }
