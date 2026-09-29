@@ -1,8 +1,9 @@
-<p align="center">
-  <img src="apps/web/public/app-icon.png" width="128" height="128" alt="LocalBolo app icon">
-</p>
-
-<h1 align="center">LocalBolo</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/wordmark-white.svg">
+    <img src="brand/wordmark.svg" width="320" alt="LocalBolo">
+  </picture>
+</h1>
 
 <p align="center">
   Private, on-device voice dictation for macOS.<br>
@@ -164,9 +165,10 @@ apps/
 └── web/                          Marketing site (Next.js 16, Tailwind CSS 4)
 .github/workflows/                CI (quick checks on pull requests, full checks in the merge queue) and releases
 AGENTS.md                         How coding agents should check and merge their work
+brand/                            The wordmark and monogram, as SVG
 docs/images/                      Screenshots for this README
 scripts/
-├── generate-app-icon.swift       Draws the app icons for both apps
+├── generate-icons.swift          Draws the app, menu bar and website icons from the monogram
 └── release-mac.sh                Builds, signs, notarizes and packages a release
 ```
 
@@ -220,16 +222,24 @@ pnpm install
 pnpm dev      # http://localhost:3000
 ```
 
-Copy and links live in `src/lib/site.ts`. The model list in `src/lib/models.ts` mirrors the app's
-`SpeechModel.swift`.
+Copy, links and the price live in `src/lib/site.ts`. The model list in `src/lib/models.ts` mirrors
+the app's `SpeechModel.swift`. The site generates its own `robots.txt`, `sitemap.xml`, web
+manifest, link preview image, `llms.txt` and schema.org data; see
+[`apps/web/README.md`](apps/web/README.md).
 
-### App icon
+### Logo and icons
 
-The icons are drawn in code. After changing the design, regenerate every size of the production
-and development icons for both apps:
+LocalBolo's logo is the "localbolo" wordmark ([`brand/wordmark.svg`](brand/wordmark.svg)).
+Wherever a single icon is needed, it uses the monogram, the "a" from the wordmark
+([`brand/monogram.svg`](brand/monogram.svg)): the app icon, the menu bar icon and the favicon.
+Both have white versions for dark backgrounds.
+
+The icons are drawn in code from the monogram. After changing it or the design, regenerate the
+production and development app icons, the menu bar icons (template images for idle and
+listening) and the website's icons:
 
 ```sh
-swift scripts/generate-app-icon.swift
+swift scripts/generate-icons.swift
 ```
 
 ### Continuous integration
@@ -292,8 +302,9 @@ gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes
 ```
 
 This repository is internal, so its releases are only visible to members of the organization.
-To let anyone download LocalBolo from the website, publish the disk image somewhere public and
-point `downloadUrl` in `apps/web/src/lib/site.ts` at it.
+The website sells LocalBolo through Dodo Payments, which delivers the disk image to buyers by
+email. Attach each new `LocalBolo.dmg` to the product in the Dodo dashboard; see
+[Payments](apps/web/README.md#payments).
 
 ## Troubleshooting
 

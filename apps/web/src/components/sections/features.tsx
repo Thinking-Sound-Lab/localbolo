@@ -1,57 +1,55 @@
+import { CardIndex } from "@/components/card";
+import { PixelArt } from "@/components/pixel-art";
 import { SectionHeading } from "@/components/sections/section-heading";
+import { pixelIcons } from "@/lib/pixel-icons";
 
 const features = [
   {
     title: "On-device, always",
     body: "Speech models run on the Neural Engine in your Mac. There is no server to send audio to.",
-    icon: "M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6l-8-3Z",
+    icon: pixelIcons.chip,
   },
   {
     title: "Works in every app",
     body: "Mail, Slack, your code editor, a browser tab. Anywhere there's a cursor, your words land there.",
-    icon: "M4 5h16v11H4zM8 20h8M12 16v4",
+    icon: pixelIcons.cursor,
   },
   {
     title: "Knows where it's typing",
     body: "The pill shows the icon of the app that will receive your text, so you never paste into the wrong window.",
-    icon: "M4 12a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm8-3v3l2 2",
+    icon: pixelIcons.target,
   },
   {
     title: "Fast on Apple Silicon",
     body: "Parakeet transcribes a sentence in a fraction of a second, even on the first M1 Macs.",
-    icon: "M13 3 5 13h6l-1 8 8-10h-6l1-8Z",
+    icon: pixelIcons.bolt,
   },
   {
     title: "Built for English",
     body: "English-first models handle punctuation, capitalization, and everyday names without extra setup.",
-    icon: "M4 6h10M9 6v12M14 18l4-10 4 10M15.5 14h5",
+    icon: pixelIcons.letters,
   },
   {
-    title: "Fixes it when you correct yourself",
-    body: "Say “3 p.m., sorry, 4 p.m.” and only “4 p.m.” lands. An optional on-device language model applies your corrections and drops the ums.",
-    icon: "M4 20l4-1 11-11-3-3L5 16l-1 4ZM14 7l3 3",
+    title: "Leaves your clipboard alone",
+    body: "Whatever you had copied is put back right after pasting, and clipboard managers are told to skip the transcript.",
+    icon: pixelIcons.clipboard,
   },
 ];
 
 export function Features() {
   return (
-    <section className="border-t border-line bg-paper-deep/40">
+    <section id="features" className="scroll-mt-16 border-t border-line">
       <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
-        <SectionHeading eyebrow="Why LocalBolo" title="Built to disappear into your day." />
+        <SectionHeading eyebrow="What's inside" title="Built to disappear into your day." />
 
-        <div className="mt-14 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title}>
-              <div className="grid size-11 place-items-center rounded-xl bg-ink text-paper">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="size-5 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"
-                  aria-hidden
-                >
-                  <path d={feature.icon} />
-                </svg>
+        <div className="mt-14 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, index) => (
+            <div key={feature.title} className="bg-white p-7 sm:p-8">
+              <div className="flex items-start justify-between">
+                <PixelArt art={feature.icon} className="h-[27px] w-auto text-ink" />
+                <CardIndex index={index + 1} />
               </div>
-              <h3 className="mt-5 text-lg font-semibold tracking-tight">{feature.title}</h3>
+              <h3 className="mt-8 text-lg font-medium tracking-[-0.02em]">{feature.title}</h3>
               <p className="mt-2 text-ink-soft">{feature.body}</p>
             </div>
           ))}

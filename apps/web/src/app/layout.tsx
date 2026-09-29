@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono, Geist_Pixel } from "next/font/google";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -13,11 +13,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
+// Square pixels, the font's default shape. Next has no metrics to size a
+// fallback for this font, so it falls back to mono.
+const geistPixel = Geist_Pixel({
+  variable: "--font-geist-pixel",
   subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
+  adjustFontFallback: false,
+  fallback: ["ui-monospace", "monospace"],
 });
 
 export const metadata: Metadata = {
@@ -27,21 +29,38 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
-  openGraph: {
-    title: site.name,
-    description: site.description,
-    siteName: site.name,
-    type: "website",
-  },
+  applicationName: site.name,
+  keywords: [
+    "dictation app for Mac",
+    "offline dictation",
+    "private dictation",
+    "speech to text for Mac",
+    "voice typing",
+    "on-device transcription",
+    "Parakeet",
+    "Whisper",
+  ],
+  authors: [{ name: site.company }],
+  creator: site.company,
+  publisher: site.company,
+  category: "technology",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${geistPixel.variable} antialiased`}
     >
-      <body className="min-h-full font-sans">{children}</body>
+      {/* "Back to top" links point here. */}
+      <body id="top" className="min-h-full font-sans">
+        {children}
+      </body>
     </html>
   );
 }

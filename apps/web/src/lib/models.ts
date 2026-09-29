@@ -5,7 +5,8 @@
 export type SpeechModel = {
   name: string;
   engine: string;
-  size: string;
+  /** Download size. */
+  megabytes: number;
   summary: string;
   recommended?: boolean;
 };
@@ -14,26 +15,26 @@ export const speechModels: SpeechModel[] = [
   {
     name: "Parakeet v2",
     engine: "NVIDIA Parakeet",
-    size: "470 MB",
+    megabytes: 470,
     summary: "Best for English. Very fast and highly accurate.",
     recommended: true,
   },
   {
     name: "Whisper Base",
     engine: "OpenAI Whisper",
-    size: "150 MB",
+    megabytes: 150,
     summary: "Smallest download. Good for quick notes.",
   },
   {
     name: "Whisper Small",
     engine: "OpenAI Whisper",
-    size: "220 MB",
+    megabytes: 220,
     summary: "A balance of speed and accuracy.",
   },
   {
     name: "Whisper Large v3 Turbo",
     engine: "OpenAI Whisper",
-    size: "630 MB",
+    megabytes: 630,
     summary: "Most accurate Whisper. Slower on older Macs.",
   },
 ];
