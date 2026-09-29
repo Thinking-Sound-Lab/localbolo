@@ -72,24 +72,29 @@ frame and the ASCII hover is off.
 ## Payments
 
 LocalBolo is sold through [Dodo Payments](https://dodopayments.com), the merchant of record: Dodo
-runs checkout, charges sales tax, and emails the receipt and the download. Every page is static
-except these, which run on the server:
+runs checkout, charges sales tax, and emails the receipt and a license key. Anyone can download
+the app, but it only works once it's activated with a key. Every page is static except these,
+which run on the server:
 
 | Route | What it does |
 | --- | --- |
 | `/buy` | Creates a checkout session for the LocalBolo product and redirects to Dodo's checkout. Every Buy button links here. |
 | `/purchase` | Where Dodo sends buyers back. It looks up the `payment_id` from the URL with Dodo, so a crafted link can't fake a confirmation, and reports the outcome. It shows nothing private, since anyone with the link sees it: license keys go out by email only. It's `noindex` and sends no referrer. |
 | `/api/webhooks/dodo` | Verifies each webhook's signature and logs sales, refunds and disputes (IDs and amounts only). |
+| `/download` | Redirects to the newest `LocalBolo.dmg` from the GitHub releases; `/download/v0.2.0` to a specific one. |
+| `/appcast.xml` | The update feed the app's updater (Sparkle) checks, rebuilt every ten minutes from the GitHub releases. |
 
 ### Setting it up
 
 1. In the Dodo dashboard, in **test mode**, create a product: LocalBolo for Mac, a one-time price
-   of $49, tax category *Digital products*. Attach the disk image under **Digital product
-   delivery** so buyers get the download by email.
+   of $49, tax category *Digital products*. Add a **License Key** entitlement with no expiry and
+   an activation limit (for example 2 Macs), and an activation message such as "Download
+   LocalBolo at https://localbolo.app/download and enter this key when it asks."
 2. Create an API key, and a webhook pointing at `https://<your domain>/api/webhooks/dodo` with at
    least `payment.succeeded`, `payment.failed`, `refund.succeeded` and `dispute.opened`.
 3. Copy `.env.local.example` to `.env.local` and fill in the API key, product ID and webhook
-   secret. Buy with one of Dodo's test cards to try the whole flow.
+   secret, plus `GITHUB_RELEASES_TOKEN` for downloads. Buy with one of Dodo's test cards to try
+   the whole flow; development builds of the app activate test-mode keys.
 4. To go live, repeat steps 1 and 2 in **live mode** (products and keys don't carry over), set
    the live values and `DODO_PAYMENTS_ENVIRONMENT=live_mode` in your hosting provider, and
    deploy.
@@ -101,7 +106,7 @@ still builds and runs.
 
 | Route | Source | Purpose |
 | --- | --- | --- |
-| `/robots.txt` | `app/robots.ts` | Allows crawling, except checkout and webhooks, and points to the sitemap |
+| `/robots.txt` | `app/robots.ts` | Allows crawling, except checkout, downloads and the update feed, and points to the sitemap |
 | `/sitemap.xml` | `app/sitemap.ts` | Lists every page; add new pages here and to the footer |
 | `/manifest.webmanifest` | `app/manifest.ts` | Name, icons and colors for browsers |
 | `/opengraph-image` | `app/opengraph-image.tsx` | The link preview image |

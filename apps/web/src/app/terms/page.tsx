@@ -34,6 +34,11 @@ const sections: DocSection[] = [
           is licensed to you, not sold.
         </p>
         <p>
+          You activate {site.name} with the license key from your purchase email. A key works on a
+          limited number of Macs at a time; to move it to a new Mac, deactivate it on the old one
+          in {site.name}&apos;s Settings.
+        </p>
+        <p>
           Your license doesn&apos;t expire. It covers the version you bought and any updates we
           include with it. If a future major version is a paid upgrade, we&apos;ll say so before you
           download it, and the version you have keeps working.

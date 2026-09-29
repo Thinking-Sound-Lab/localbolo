@@ -7,6 +7,16 @@ PRODUCT_BUNDLE_IDENTIFIER = com.localbolo.LocalBolo
 INFOPLIST_KEY_CFBundleDisplayName = LocalBolo
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 
+// Licenses are checked against Dodo Payments' live mode.
+// (`/$()/` stops xcconfig from reading `//` as a comment.)
+LICENSE_SERVER_URL = https:/$()/live.dodopayments.com
+
+// Sparkle checks this feed for updates, and installs only updates signed with
+// the private key that matches this public key. Generate the pair once with
+// scripts/generate-sparkle-keys.sh; updates stay off until this is set.
+SPARKLE_FEED_URL = https:/$()/localbolo.app/appcast.xml
+SPARKLE_PUBLIC_KEY =
+
 // Signed with Thinking Sound Lab's Developer ID and a secure timestamp, as
 // required to notarize the app and distribute it outside the Mac App Store.
 CODE_SIGN_STYLE = Manual

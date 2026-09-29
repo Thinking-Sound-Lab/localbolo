@@ -29,6 +29,34 @@ const sections: DocSection[] = [
     ),
   },
   {
+    id: "install",
+    title: "Installing and activating",
+    content: (
+      <>
+        <p>
+          <a href={site.downloadUrl}>Download the latest {site.name}</a>, drag it to your
+          Applications folder and open it. The setup guide asks for your license key, which is in
+          the email from Dodo Payments you got after buying. You only enter it once per Mac.
+        </p>
+        <p>
+          Moving to a new Mac? Open Settings › License on the old one and choose Deactivate This
+          Mac, then enter the same key on the new one.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "updates",
+    title: "Updates",
+    content: (
+      <p>
+        {site.name} checks for updates once a day and asks before installing one. To check now,
+        click the menu bar icon and choose Check for Updates. You can turn automatic checks off in
+        Settings › General.
+      </p>
+    ),
+  },
+  {
     id: "requirements",
     title: "System requirements",
     content: (
@@ -48,8 +76,8 @@ const sections: DocSection[] = [
           <strong>8 GB of memory</strong> is enough, including with cleanup turned on.
         </li>
         <li>
-          <strong>An internet connection</strong> only to download models. After that, dictation
-          works offline.
+          <strong>An internet connection</strong> to activate your license and download a model.
+          After that, dictation works offline.
         </li>
       </ul>
     ),
@@ -86,6 +114,10 @@ const sections: DocSection[] = [
     title: "Nothing happens when I hold fn",
     content: (
       <ul>
+        <li>
+          Make sure your license key is activated. Click the menu bar icon: it says so if it
+          isn&apos;t.
+        </li>
         <li>Hold fn for at least a quarter of a second. Quick taps are ignored on purpose.</li>
         <li>
           Check that {site.name} has Microphone access in System Settings › Privacy & Security ›

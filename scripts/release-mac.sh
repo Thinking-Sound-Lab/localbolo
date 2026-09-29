@@ -3,7 +3,9 @@
 # Builds LocalBolo for download from the website (not the Mac App Store):
 # archives the production app, signs it with the Developer ID, has Apple
 # notarize it, and packages it as a signed, notarized disk image at
-# build/release/LocalBolo.dmg.
+# build/release/LocalBolo.dmg. It also signs the disk image for Sparkle, the
+# in-app updater, and writes the update's details to build/release/sparkle.txt
+# for the release notes, where the website's update feed reads them.
 #
 # Notarization is Apple's automated malware check. Without it, macOS refuses
 # to open apps downloaded from the internet. Nothing is published anywhere.
@@ -16,6 +18,9 @@
 #   - On a Mac: a notarytool keychain profile named "LocalBolo", created once with
 #       xcrun notarytool store-credentials LocalBolo --apple-id <you@example.com> --team-id 4M5LV534N5
 #   - In CI: NOTARY_APPLE_ID and NOTARY_PASSWORD.
+#
+# Signing for Sparkle uses the private key from scripts/generate-sparkle-keys.sh:
+# from this Mac's keychain, or from SPARKLE_PRIVATE_KEY in CI.
 
 set -euo pipefail
 
@@ -25,6 +30,9 @@ SIGNING_IDENTITY="${SIGNING_IDENTITY:-Developer ID Application: THINKING SOUND L
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/build/release"
+# Packages go in a known place so Sparkle's signing tool can be found. They're
+# kept between runs.
+PACKAGES="$ROOT/build/SourcePackages"
 ARCHIVE="$OUT/LocalBolo.xcarchive"
 APP="$OUT/export/LocalBolo.app"
 DMG="$OUT/LocalBolo.dmg"
@@ -48,6 +56,7 @@ xcodebuild archive \
   -configuration Release \
   -destination "generic/platform=macOS" \
   -archivePath "$ARCHIVE" \
+  -clonedSourcePackagesDirPath "$PACKAGES" \
   -skipPackagePluginValidation \
   -quiet \
   ARCHS=arm64 \
@@ -60,6 +69,13 @@ xcodebuild -exportArchive \
   -exportOptionsPlist "$ROOT/apps/mac/Config/ExportOptions.plist" \
   -exportPath "$OUT/export" \
   -quiet
+
+# Without the public key the app can't verify updates, so this version could
+# never update itself. Catch that before spending time on notarization.
+if [[ -z "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist" 2>/dev/null)" ]]; then
+  echo "error: SPARKLE_PUBLIC_KEY isn't set in apps/mac/Config/Production.xcconfig. Run scripts/generate-sparkle-keys.sh first." >&2
+  exit 1
+fi
 
 # Notarize and staple the app itself, so it opens without a network check
 # even after it's copied out of the disk image.
@@ -83,5 +99,19 @@ xcrun stapler staple "$DMG"
 echo "▸ Checking that Gatekeeper accepts it"
 spctl --assess --type open --context context:primary-signature --verbose "$DMG"
 spctl --assess --type execute --verbose "$APP"
+
+# Sparkle checks this signature before installing an update, so sign the final,
+# stapled disk image.
+echo "▸ Signing the disk image for Sparkle"
+SIGN_UPDATE="$PACKAGES/artifacts/sparkle/Sparkle/bin/sign_update"
+if [[ -n "${SPARKLE_PRIVATE_KEY:-}" ]]; then
+  SIGNATURE="$(printf '%s' "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - "$DMG")"
+else
+  SIGNATURE="$("$SIGN_UPDATE" "$DMG")"
+fi
+BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")"
+MINIMUM_SYSTEM="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")"
+# An HTML comment: invisible in the release notes, read by the website's appcast.
+echo "<!-- sparkle version=\"$VERSION\" build=\"$BUILD\" minimumSystemVersion=\"$MINIMUM_SYSTEM\" $SIGNATURE -->" > "$OUT/sparkle.txt"
 
 echo "✓ Built $DMG"

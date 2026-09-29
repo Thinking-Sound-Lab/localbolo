@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// First-run checklist: permissions, a speech model, and a place to try dictating.
+/// The setup guide. It asks for the license key first, then shows a
+/// checklist of permissions and a speech model, and a place to try dictating.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismissWindow) private var dismissWindow
@@ -8,6 +9,22 @@ struct OnboardingView: View {
     @State private var practiceText = ""
 
     var body: some View {
+        Group {
+            if app.license.isActivated {
+                setup
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            } else {
+                LicenseScreen()
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
+            }
+        }
+        .frame(width: 580)
+        .animation(.default, value: app.license.isActivated)
+        .onAppear { NSApp.activate() }
+        .task { await watchGlobeKeySetting() }
+    }
+
+    private var setup: some View {
         VStack(alignment: .leading, spacing: 24) {
             header
             checklist
@@ -18,10 +35,7 @@ struct OnboardingView: View {
             footer
         }
         .padding(32)
-        .frame(width: 580)
         .animation(.default, value: isReadyToDictate)
-        .onAppear { NSApp.activate() }
-        .task { await watchGlobeKeySetting() }
     }
 
     private var isReadyToDictate: Bool {
@@ -36,7 +50,7 @@ struct OnboardingView: View {
                 .resizable()
                 .frame(width: 64, height: 64)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Welcome to LocalBolo")
+                Text("Set up dictation")
                     .font(.largeTitle.bold())
                 Text("Hold fn, speak, and let go. Your words appear wherever you're typing, and your voice never leaves this Mac.")
                     .foregroundStyle(.secondary)
@@ -105,7 +119,7 @@ struct OnboardingView: View {
 
     private var footer: some View {
         HStack {
-            Text("Everything runs locally. No account, no cloud.")
+            Text("Dictation runs entirely on this Mac. No account, no cloud.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()

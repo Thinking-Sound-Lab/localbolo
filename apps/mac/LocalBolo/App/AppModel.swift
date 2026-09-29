@@ -5,6 +5,8 @@ import Observation
 @Observable
 final class AppModel {
     let settings: AppSettings
+    let license: LicenseManager
+    let updater: Updater
     let permissions: PermissionsMonitor
     let speechModels: SpeechModelStore
     let cleanup: TranscriptCleanup
@@ -14,10 +16,12 @@ final class AppModel {
 
     init() {
         let settings = AppSettings()
+        let license = LicenseManager()
         let permissions = PermissionsMonitor()
         let speechModels = SpeechModelStore()
         let cleanup = TranscriptCleanup(settings: settings, models: CleanupModelStore())
         let dictation = DictationController(
+            license: license,
             speechModels: speechModels,
             cleanup: cleanup,
             permissions: permissions,
@@ -25,6 +29,8 @@ final class AppModel {
         )
 
         self.settings = settings
+        self.license = license
+        self.updater = Updater()
         self.permissions = permissions
         self.speechModels = speechModels
         self.cleanup = cleanup
@@ -32,12 +38,15 @@ final class AppModel {
         self.pill = PillController(dictation: dictation, settings: settings)
     }
 
-    /// True until every permission is granted and a speech model is on disk.
+    /// True until the license is activated, every permission is granted and a
+    /// speech model is on disk.
     var needsSetup: Bool {
-        !permissions.allGranted || !speechModels.isInstalled(speechModels.activeModel)
+        !license.isActivated || !permissions.allGranted || !speechModels.isInstalled(speechModels.activeModel)
     }
 
     func start() {
+        license.start()
+        updater.start()
         permissions.startMonitoring()
         dictation.start()
         pill.start()

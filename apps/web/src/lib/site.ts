@@ -12,6 +12,8 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   /** Where every Buy button goes: starts a Dodo Payments checkout (app/buy/route.ts). */
   purchaseUrl: "/buy",
+  /** The newest version of the Mac app (app/download). It asks for a license key before it works. */
+  downloadUrl: "/download",
   price: {
     amount: 49,
     currency: "USD",

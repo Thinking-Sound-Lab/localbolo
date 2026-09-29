@@ -8,4 +8,6 @@ nonisolated extension Logger {
     static let dictation = Logger(subsystem: subsystem, category: "Dictation")
     static let models = Logger(subsystem: subsystem, category: "Models")
     static let cleanup = Logger(subsystem: subsystem, category: "Cleanup")
+    static let license = Logger(subsystem: subsystem, category: "License")
+    static let updates = Logger(subsystem: subsystem, category: "Updates")
 }

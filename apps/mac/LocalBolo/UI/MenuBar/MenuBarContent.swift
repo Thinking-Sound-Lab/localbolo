@@ -38,6 +38,13 @@ struct MenuBarContent: View {
             openSettings()
         }
         .keyboardShortcut(",")
+        if model.updater.isAvailable {
+            Button("Check for Updates…") {
+                NSApp.activate()
+                model.updater.checkForUpdates()
+            }
+            .disabled(!model.updater.canCheckForUpdates)
+        }
 
         Divider()
 
@@ -53,6 +60,7 @@ struct MenuBarContent: View {
     }
 
     private var statusText: String {
+        guard model.license.isActivated else { return "Enter your license key to start" }
         guard model.permissions.allGranted else { return "Finish setup to start dictating" }
 
         return switch model.speechModels.status(of: model.speechModels.activeModel) {

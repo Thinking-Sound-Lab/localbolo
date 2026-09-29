@@ -10,12 +10,16 @@ CURRENT_PROJECT_VERSION = 1
 MACOSX_DEPLOYMENT_TARGET = 15.0
 ARCHS = arm64
 
-// Info.plist
+// Info.plist, generated from these settings and merged with Config/Info.plist.
 GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_FILE = Config/Info.plist
 INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.productivity
 INFOPLIST_KEY_NSMicrophoneUsageDescription = LocalBolo listens only while you hold the fn key, and transcribes your speech on this Mac.
 // Menu bar app: no Dock icon and no main menu.
 INFOPLIST_KEY_LSUIElement = YES
+
+// Embedded frameworks, such as Sparkle, live in Contents/Frameworks.
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks
 
 // Assets
 ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor

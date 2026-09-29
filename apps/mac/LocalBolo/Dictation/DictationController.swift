@@ -12,6 +12,7 @@ final class DictationController {
     private(set) var audioLevel: Float = 0
     private(set) var lastTranscript: String?
 
+    @ObservationIgnored private let license: LicenseManager
     @ObservationIgnored private let speechModels: SpeechModelStore
     @ObservationIgnored private let cleanup: TranscriptCleanup
     @ObservationIgnored private let permissions: PermissionsMonitor
@@ -23,11 +24,13 @@ final class DictationController {
     @ObservationIgnored private var noticeDismissal: Task<Void, Never>?
 
     init(
+        license: LicenseManager,
         speechModels: SpeechModelStore,
         cleanup: TranscriptCleanup,
         permissions: PermissionsMonitor,
         inserter: TextInserter
     ) {
+        self.license = license
         self.speechModels = speechModels
         self.cleanup = cleanup
         self.permissions = permissions
@@ -58,6 +61,10 @@ final class DictationController {
 
     private func beginListening() {
         guard phase == .idle || phase.isNotice else { return }
+
+        guard license.isActivated else {
+            return showNotice("Enter your license key in the Setup Guide")
+        }
 
         switch permissions.microphone {
         case .granted:

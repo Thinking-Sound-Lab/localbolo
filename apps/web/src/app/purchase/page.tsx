@@ -74,15 +74,21 @@ export default async function PurchasePage({ searchParams }: PageProps<"/purchas
                 Thank you. {site.name} is <span className="font-pixel font-normal text-blue">yours.</span>
               </h1>
               <p className="mt-6 text-lg text-ink-soft">
-                We&apos;ve emailed your receipt and download link. It comes from Dodo Payments, who
-                handle checkout for us.
+                Your license key is on its way by email from Dodo Payments, who handle checkout for
+                us. Download {site.name} while you wait.
               </p>
+              <a
+                href={site.downloadUrl}
+                className="mt-8 inline-flex h-12 items-center bg-ink px-5 font-mono text-xs tracking-[0.08em] text-white uppercase transition-colors hover:bg-blue"
+              >
+                Download {site.name} for Mac
+              </a>
 
               <ol className="mt-8 border border-line bg-white">
                 {[
-                  "Open the email from Dodo Payments and download LocalBolo.",
                   "Drag LocalBolo to your Applications folder and open it.",
-                  "Follow the setup guide, then hold fn and start talking.",
+                  "Enter the license key from the Dodo Payments email. You only do this once.",
+                  "Follow the rest of the setup guide, then hold fn and start talking.",
                 ].map((step, index) => (
                   <li key={step} className="flex gap-4 border-line p-5 not-first:border-t">
                     <span className="pt-0.5 font-mono text-[11px] text-ink-faint">
@@ -93,7 +99,7 @@ export default async function PurchasePage({ searchParams }: PageProps<"/purchas
                 ))}
               </ol>
               <p className="mt-6 text-ink-soft">
-                No email after a few minutes? Check your spam folder, or write to {email}.
+                No license key after a few minutes? Check your spam folder, or write to {email}.
               </p>
             </>
           ) : outcome === "pending" ? (

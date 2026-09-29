@@ -21,8 +21,8 @@ const sections: DocSection[] = [
           never sent to us or anyone else. The app has no account, no analytics and no tracking.
         </p>
         <p>
-          We only handle personal information when you buy {site.name} or contact us, and only to
-          deliver your purchase and help you.
+          We only handle personal information when you buy {site.name}, activate it, or contact us,
+          and only to deliver your purchase, check your license and help you.
         </p>
       </>
     ),
@@ -83,9 +83,10 @@ const sections: DocSection[] = [
     title: "What stays on your Mac",
     content: (
       <p>
-        Your settings, such as the model you chose, are stored in your Mac&apos;s preferences, and
-        downloaded models in <code>~/Library/Application Support/LocalBolo</code>. Neither is sent
-        to us. Deleting the app and that folder removes them.
+        Your settings, such as the model you chose, and your license key are stored in your
+        Mac&apos;s preferences, and downloaded models in{" "}
+        <code>~/Library/Application Support/LocalBolo</code>. Deleting the app and that folder
+        removes them.
       </p>
     ),
   },
@@ -93,12 +94,31 @@ const sections: DocSection[] = [
     id: "network",
     title: "Network requests",
     content: (
-      <p>
-        The app connects to the internet only to download the speech model you choose, or the
-        cleanup model if you turn cleanup on. Models are downloaded from Hugging Face, which
-        receives the technical details of that request, such as your IP address, under its own
-        privacy policy. Nothing about you or your recordings is included.
-      </p>
+      <>
+        <p>
+          The app connects to the internet for three things, and never sends your recordings or
+          transcripts:
+        </p>
+        <ul>
+          <li>
+            <strong>Models.</strong> It downloads the speech model you choose, and the cleanup model
+            if you turn cleanup on, from Hugging Face, which receives the technical details of the
+            request, such as your IP address, under its own privacy policy.
+          </li>
+          <li>
+            <strong>Your license.</strong> When you enter your license key, the app activates it with
+            Dodo Payments, sending the key and your Mac&apos;s name so you can tell your Macs apart.
+            About every two weeks, when you&apos;re online, it checks with Dodo that the key is still
+            valid. If a check can&apos;t go through, {site.name} keeps working.
+          </li>
+          <li>
+            <strong>Updates.</strong> Once a day, the app downloads a small list of versions from
+            this website to see whether there&apos;s a new one, and downloads it if you choose to
+            update. The request includes standard details such as your IP address and the app&apos;s
+            version, and nothing else about your Mac. You can turn automatic checks off in Settings.
+          </li>
+        </ul>
+      </>
     ),
   },
   {
