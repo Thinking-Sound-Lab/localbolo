@@ -11,8 +11,8 @@ nonisolated struct Activation: Codable, Equatable, Sendable {
     let machineID: String
     /// When Dodo last confirmed the key was still valid.
     var lastValidated: Date
-    /// The latest time LocalBolo has seen, so turning the clock back can't
-    /// stretch the time allowed offline.
+    /// The latest time LocalBolo has seen, to tell when the clock is turned
+    /// back.
     var latestSeen: Date
 }
 
@@ -21,14 +21,15 @@ nonisolated struct Activation: Codable, Equatable, Sendable {
 /// The buyer activates the key from their purchase email once. Each
 /// activation is tied to one Mac, and Dodo limits how many Macs a key can be
 /// active on. Every two weeks the app quietly re-checks the key, so a refunded
-/// or deactivated key stops working; if it can't get through for a month, it
-/// asks to connect once before dictating again.
+/// or deactivated key stops working; if it can't get through for a month, or
+/// the clock is turned back, it asks to connect once before dictating again.
 @Observable
 final class LicenseManager {
     enum Status: Equatable {
         case notActivated
         case active
-        /// Activated, but too long since a successful check with Dodo.
+        /// Activated, but it's been too long since a successful check with
+        /// Dodo, or the clock has been turned back since.
         case needsVerification
     }
 
@@ -36,6 +37,9 @@ final class LicenseManager {
     static let revalidationInterval: TimeInterval = 14 * 24 * 60 * 60
     /// How long LocalBolo keeps working without a successful check: 30 days.
     static let offlineAllowance: TimeInterval = 30 * 24 * 60 * 60
+    /// How far the clock can go back without needing a check: enough for the
+    /// small corrections macOS makes by itself.
+    static let clockTolerance: TimeInterval = 10 * 60
 
     private(set) var activation: Activation?
     /// True while a request the user asked for is in flight.
@@ -45,7 +49,8 @@ final class LicenseManager {
 
     var status: Status {
         guard let activation else { return .notActivated }
-        let sinceLastCheck = effectiveNow(for: activation).timeIntervalSince(activation.lastValidated)
+        if clockWentBack(activation) { return .needsVerification }
+        let sinceLastCheck = max(now(), activation.latestSeen).timeIntervalSince(activation.lastValidated)
         return sinceLastCheck < Self.offlineAllowance ? .active : .needsVerification
     }
 
@@ -149,13 +154,12 @@ final class LicenseManager {
     }
 
     /// Checks the key with Dodo if it's been two weeks, or if the clock has
-    /// been turned back since the last check. Errors are only logged: being
-    /// offline is fine until the 30-day allowance runs out.
+    /// been turned back. Errors are only logged: being offline is fine until
+    /// the 30-day allowance runs out.
     func revalidateIfDue() async {
         guard let activation else { return }
         let sinceLastCheck = now().timeIntervalSince(activation.lastValidated)
-        guard sinceLastCheck < 0 || effectiveNow(for: activation).timeIntervalSince(activation.lastValidated) >= Self.revalidationInterval
-        else { return }
+        guard clockWentBack(activation) || sinceLastCheck >= Self.revalidationInterval else { return }
 
         if let error = await check(activation) {
             Logger.license.info("Couldn't re-check the license: \(error.localizedDescription, privacy: .public)")
@@ -184,9 +188,9 @@ final class LicenseManager {
         guard var current = self.activation, current.instanceID == activation.instanceID else { return nil }
 
         if isValid {
-            // Count the check from the latest time seen, not a clock that's
-            // been turned back, or a good check could still leave it locked.
-            let date = effectiveNow(for: current)
+            // Start counting again from the clock as it reads now, even if it
+            // was changed: Dodo has just confirmed the key.
+            let date = now()
             current.lastValidated = date
             current.latestSeen = date
             save(current)
@@ -198,9 +202,11 @@ final class LicenseManager {
         return nil
     }
 
-    /// The current time, or the latest time seen if the clock has gone back.
-    private func effectiveNow(for activation: Activation) -> Date {
-        max(now(), activation.latestSeen)
+    /// Whether the clock reads earlier than a time LocalBolo has already seen,
+    /// including a check dated in the future. There's no telling how long it's
+    /// been offline then, so the key has to be checked again.
+    private func clockWentBack(_ activation: Activation) -> Bool {
+        max(activation.lastValidated, activation.latestSeen).timeIntervalSince(now()) > Self.clockTolerance
     }
 
     private func noteCurrentTime() {

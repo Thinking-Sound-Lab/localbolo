@@ -342,7 +342,7 @@ entitlement and shown on the website from `macsPerLicense` in `apps/web/src/lib/
 - **Re-checked every two weeks, required monthly.** The app validates the key and this Mac's
   activation with Dodo every 14 days. If it can't for 30 days, it asks to connect once before
   dictating again. Refunds disable the key in Dodo, so a refunded copy stops at its next check.
-  Turning the clock back doesn't extend the 30 days.
+  Turning the clock back makes it check again before dictating.
 - **Moving and recovering.** Settings › License deactivates a Mac. For a lost or broken Mac,
   deactivate its activation in the Dodo dashboard (it's listed by the Mac's name and ID).
   Buyers who lose their key use `localbolo.app/license`, Dodo's customer portal.

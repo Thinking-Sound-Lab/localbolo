@@ -6,6 +6,7 @@ import Testing
 struct LicenseManagerTests {
     private let defaults = UserDefaults(suiteName: "LocalBoloTests-\(UUID().uuidString)")!
     private let today = Date(timeIntervalSince1970: 1_800_000_000)
+    private let day: TimeInterval = 24 * 60 * 60
 
     // MARK: - Activation
 
@@ -113,10 +114,35 @@ struct LicenseManagerTests {
         #expect(license.activation?.lastValidated == today)
     }
 
-    @Test func turningTheClockBackDoesNotStretchTheMonth() {
-        // Last checked 31 days before the latest time LocalBolo saw; the clock now reads earlier.
-        storeActivation(checkedDaysAgo: 31, latestSeenDaysAgo: 0)
-        let license = makeManager(FakeLicenseServer(), now: today.addingTimeInterval(-20 * 24 * 60 * 60))
+    @Test func turningTheClockBackAsksForACheck() async {
+        // Checked yesterday, and LocalBolo has seen today; the clock now reads two days ago.
+        storeActivation(checkedDaysAgo: 1, latestSeenDaysAgo: 0)
+        let server = FakeLicenseServer(isOffline: true)
+        let license = makeManager(server, now: today.addingTimeInterval(-2 * day))
+
+        await license.revalidateIfDue()
+
+        #expect(license.status == .needsVerification)
+        #expect(server.requests.count == 1)
+    }
+
+    @Test func smallClockCorrectionsDoNotNeedACheck() {
+        storeActivation(checkedDaysAgo: 1, latestSeenDaysAgo: 0)
+        let license = makeManager(FakeLicenseServer(), now: today.addingTimeInterval(-5 * 60))
+
+        #expect(license.isLicensed)
+    }
+
+    @Test func aCheckWithTheClockAheadDoesNotStretchTheMonth() async {
+        // A successful check while the clock reads a year ahead, then the clock is put right.
+        storeActivation(checkedDaysAgo: 15)
+        let clock = TestClock(today.addingTimeInterval(365 * day))
+        let server = FakeLicenseServer(["licenses/validate": .init(status: 200, body: #"{"valid":true}"#)])
+        let license = LicenseManager(client: server.client, defaults: defaults, now: { clock.now }, machineID: thisMac)
+        await license.revalidateIfDue()
+        #expect(license.isLicensed)
+
+        clock.set(today)
 
         #expect(license.status == .needsVerification)
     }
@@ -125,12 +151,13 @@ struct LicenseManagerTests {
         storeActivation(checkedDaysAgo: 31, latestSeenDaysAgo: 0)
         let license = makeManager(
             FakeLicenseServer(["licenses/validate": .init(status: 200, body: #"{"valid":true}"#)]),
-            now: today.addingTimeInterval(-40 * 24 * 60 * 60)
+            now: today.addingTimeInterval(-40 * day)
         )
 
         await license.verifyNow()
 
         #expect(license.isLicensed)
+        #expect(license.activation?.lastValidated == today.addingTimeInterval(-40 * day))
     }
 
     @Test func ignoresAnActivationFromAnotherMac() {
@@ -219,7 +246,6 @@ struct LicenseManagerTests {
     }
 
     private func storeActivation(checkedDaysAgo days: Double, latestSeenDaysAgo seenDays: Double? = nil, machineID: String? = nil) {
-        let day: TimeInterval = 24 * 60 * 60
         let lastValidated = today.addingTimeInterval(-days * day)
         let activation = Activation(
             licenseKey: "LB-1234-ABCD",
@@ -266,5 +292,20 @@ private final class FakeLicenseServer: Sendable {
             let http = HTTPURLResponse(url: request.url!, statusCode: response.status, httpVersion: nil, headerFields: nil)!
             return (Data(response.body.utf8), http)
         }
+    }
+}
+
+/// A clock a test can change while LocalBolo is running.
+private final class TestClock: Sendable {
+    private let date: Mutex<Date>
+
+    init(_ date: Date) {
+        self.date = Mutex(date)
+    }
+
+    var now: Date { date.withLock { $0 } }
+
+    func set(_ newDate: Date) {
+        date.withLock { $0 = newDate }
     }
 }
