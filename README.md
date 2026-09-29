@@ -306,7 +306,7 @@ scripts/release-mac.sh 0.2.0
 gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes --notes "$(cat build/release/sparkle.txt)"
 ```
 
-This repository is internal, so the website serves its releases: `localbolo.app/download` is
+Releases are public on GitHub, and the website serves them too: `localbolo.app/download` is
 always the newest disk image, and buyers activate it with the license key Dodo Payments emails
 them. See [Payments](apps/web/README.md#payments).
 

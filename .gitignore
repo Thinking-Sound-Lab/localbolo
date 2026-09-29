@@ -13,3 +13,7 @@ apps/mac/Config/Local.xcconfig
 # Swift Package Manager
 .swiftpm/
 .build/
+.vercel
+.env*.local
+# Claude Code's MCP servers, which name our Supabase project
+.mcp.json

@@ -129,7 +129,7 @@ const sections: DocSection[] = [
     content: (
       <p>
         This website sets no cookies and has no analytics or advertising trackers. Fonts are served
-        from this site rather than a third party. The company hosting the site may keep standard
+        from this site rather than a third party. Vercel, which hosts the site, may keep standard
         server logs, such as IP addresses and browser types, to deliver the site and protect it
         from abuse.
       </p>
@@ -151,6 +151,11 @@ const sections: DocSection[] = [
           We receive your name, email address, country and order details. We use them to deliver
           your purchase, process refunds, answer questions about your order, and keep the records
           that tax and accounting law require.
+        </p>
+        <p>
+          We keep a record of each purchase: your name, email address and country, what you paid,
+          whether it was refunded, and an ID for your license key (not the key itself). It&apos;s
+          stored with Supabase, our database provider, and only we can see it.
         </p>
       </>
     ),
@@ -225,7 +230,7 @@ export default function PrivacyPage() {
         </>
       }
       intro={`${site.name} is built so that there is nothing to collect. Here is exactly what the app and this website do with your data.`}
-      updated="September 28, 2026"
+      updated="September 29, 2026"
       sections={sections}
     />
   );

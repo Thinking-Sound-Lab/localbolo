@@ -17,7 +17,7 @@ src/
                          plus icons and the files search engines read
     buy/route.ts         Starts a Dodo Payments checkout
     purchase/page.tsx    Where buyers land after checkout
-    api/webhooks/dodo/   Verified Dodo Payments webhooks
+    api/webhooks/dodo/   Verified Dodo Payments webhooks, which record purchases
   components/
     sections/            One file per home page section
     doc-page.tsx         Layout for long pages: numbered sections and "On this page"
@@ -34,6 +34,7 @@ src/
   lib/
     site.ts              Name, price, refund window, contact, purchase link, footer links
     dodo.ts              The Dodo Payments client and product
+    purchases.ts         The record of who bought LocalBolo, in Supabase
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
     wordmark.ts          The wordmark as one SVG path, traced from the logo artwork
@@ -41,6 +42,7 @@ src/
     pixel-icons.ts       Every pixel-art icon, drawn as text, including a pixel wordmark
     metadata.ts          Per-page title, canonical URL and link previews
     structured-data.ts   schema.org data for the home page
+supabase/migrations/     The database tables, in the order they were made
 ```
 
 ## Design
@@ -80,7 +82,7 @@ which run on the server:
 | --- | --- |
 | `/buy` | Creates a checkout session for the LocalBolo product and redirects to Dodo's checkout. Every Buy button links here. |
 | `/purchase` | Where Dodo sends buyers back. It looks up the `payment_id` from the URL with Dodo, so a crafted link can't fake a confirmation, and reports the outcome. It shows nothing private, since anyone with the link sees it: license keys go out by email only. It's `noindex` and sends no referrer. |
-| `/api/webhooks/dodo` | Verifies each webhook's signature and logs sales, refunds and disputes (IDs and amounts only). |
+| `/api/webhooks/dodo` | Verifies each webhook's signature and updates the [record of purchases](#purchases) when a payment succeeds, is refunded or disputed, or gets its license key. |
 | `/download` | Redirects to the newest `LocalBolo.dmg` from the GitHub releases; `/download/v0.2.0` to a specific one. |
 | `/appcast.xml` | The update feed the app's updater (Sparkle) checks, rebuilt every ten minutes from the GitHub releases. |
 
@@ -90,17 +92,61 @@ which run on the server:
    of $49, tax category *Digital products*. Add a **License Key** entitlement with no expiry and
    an activation limit (for example 2 Macs), and an activation message such as "Download
    LocalBolo at https://localbolo.app/download and enter this key when it asks."
-2. Create an API key, and a webhook pointing at `https://<your domain>/api/webhooks/dodo` with at
-   least `payment.succeeded`, `payment.failed`, `refund.succeeded` and `dispute.opened`.
-3. Copy `.env.local.example` to `.env.local` and fill in the API key, product ID and webhook
-   secret, plus `GITHUB_RELEASES_TOKEN` for downloads. Buy with one of Dodo's test cards to try
-   the whole flow; development builds of the app activate test-mode keys.
-4. To go live, repeat steps 1 and 2 in **live mode** (products and keys don't carry over), set
-   the live values and `DODO_PAYMENTS_ENVIRONMENT=live_mode` in your hosting provider, and
-   deploy.
+2. Create an API key, and a webhook pointing at `https://<your domain>/api/webhooks/dodo` with
+   `payment.succeeded`, `refund.succeeded`, `license_key.created` and every `dispute.` event.
+3. Copy `.env.local.example` to `.env.local` and fill in the API key, product ID, business ID and
+   webhook secret. Buy with one of Dodo's test cards to try the whole flow; development builds
+   of the app activate test-mode keys.
+4. To go live, repeat steps 1 and 2 in **live mode** (products and keys don't carry over), then
+   set the live values and `DODO_PAYMENTS_ENVIRONMENT=live_mode` for Production in the
+   [Vercel project](#deploying).
 
 Without the keys, the Buy buttons lead to a friendly "checkout isn't available" page, so the site
 still builds and runs.
+
+## Purchases
+
+Everyone who buys LocalBolo gets a row in the `purchases` table in Supabase: name, email,
+country, amount and currency, when they bought, Dodo's payment and customer IDs, and the ID of
+their license key (never the key itself). `status` is `paid`, `partially_refunded`, `refunded`,
+`disputed` (a chargeback is open) or `charged_back` (the bank returned the money). Browse it in
+Supabase's Table Editor, or query it in the SQL Editor:
+
+```sql
+select email, name, country, purchased_at, status from purchases order by purchased_at desc;
+```
+
+The webhook writes it, and Dodo stays the source of truth. Each event fetches the payment
+fresh from Dodo and writes its current state, so events that arrive twice, late or out of order
+still leave the right row. If a write fails, the webhook answers with an error and Dodo retries.
+
+Only the website's server can read or write the table, with `SUPABASE_SECRET_KEY`: row level
+security is on with no policies, so the publishable key sees nothing.
+
+To change the table, add a migration to `supabase/migrations` and apply it to the project, with
+the Supabase MCP server's `apply_migration` tool or the
+[Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started):
+
+```sh
+npx supabase link --project-ref <project ref>
+npx supabase db push
+```
+
+## Deploying
+
+The site runs on [Vercel](https://vercel.com), in the `localbolo` project of the Thinking Sound
+Lab team, connected to this repository:
+
+- **Production** deploys every push to `main`. **Previews** deploy every pull request, behind
+  Vercel's sign-in.
+- The project's **Root Directory** is `apps/web` and its Node.js version is 24. Vercel installs
+  the pnpm version pinned in `package.json` (`packageManager`) by itself.
+- **Environment variables** go in the project's settings, not in files: everything in
+  `.env.local.example`, with `GITHUB_RELEASES_TOKEN` optional. Mark the keys **Sensitive** so
+  nobody can read them back.
+
+`vercel env pull` writes the project's development variables to `.env.local`, replacing the file,
+so copy anything you want to keep out of it first.
 
 ## Search engines
 
@@ -122,7 +168,7 @@ Every page also gets a canonical URL and matching link previews from `pageMetada
 | --- | --- | --- |
 | `.env.development` | `pnpm dev` | `NEXT_PUBLIC_SITE_URL=http://localhost:3000` |
 | `.env.production` | `pnpm build`, deployments | `NEXT_PUBLIC_SITE_URL=https://localbolo.app` |
-| `.env.local` | Everything, git-ignored | Local overrides and secrets, such as the Dodo Payments keys (see `.env.local.example`) |
+| `.env.local` | Everything, git-ignored | Local overrides and secrets, such as the Dodo Payments and Supabase keys (see `.env.local.example`) |
 
 `NEXT_PUBLIC_SITE_URL` is the base for absolute URLs: canonical links, the sitemap and link
 previews.
