@@ -52,7 +52,12 @@ const sections: DocSection[] = [
     title: "Lost your license key?",
     content: (
       <p>
-        Go to <a href={site.findLicenseUrl}>localbolo.app/license</a> and enter the email you bought{" "}
+        Go to{" "}
+        <a href={site.findLicenseUrl}>
+          {site.domain}
+          {site.findLicenseUrl}
+        </a>{" "}
+        and enter the email you bought{" "}
         {site.name} with. You&apos;ll get a sign-in link to a page that shows your key. Still stuck?
         Email {email}.
       </p>

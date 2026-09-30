@@ -9,6 +9,9 @@
 	<!-- Dodo Payments' license API, which activates and validates license keys. -->
 	<key>LicenseServerURL</key>
 	<string>$(LICENSE_SERVER_URL)</string>
+	<!-- The website the app links to: Buy, Lost your key? and Support. -->
+	<key>WebsiteURL</key>
+	<string>$(WEBSITE_URL)</string>
 	<!-- Sparkle updates. Without a feed URL and public key, updates are off. -->
 	<key>SUFeedURL</key>
 	<string>$(SPARKLE_FEED_URL)</string>

@@ -31,10 +31,11 @@ if [[ ! -x "$TOOLS/generate_keys" ]]; then
 fi
 
 if [[ "${1:-}" == "--export" ]]; then
-  file="$(mktemp)"
-  trap 'rm -f "$file"' EXIT
-  "$TOOLS/generate_keys" -x "$file" >&2
-  cat "$file"
+  # generate_keys won't overwrite a file, so export into a new, empty folder.
+  dir="$(mktemp -d)"
+  trap 'rm -rf "$dir"' EXIT
+  "$TOOLS/generate_keys" -x "$dir/private-key" >&2
+  cat "$dir/private-key"
 else
   "$TOOLS/generate_keys"
 fi

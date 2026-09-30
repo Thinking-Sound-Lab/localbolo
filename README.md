@@ -313,22 +313,23 @@ them. See [Payments](apps/web/README.md#payments).
 ### Updates
 
 The app updates itself with [Sparkle](https://sparkle-project.org). Once a day it reads
-`https://localbolo.app/appcast.xml`, which the website builds from the GitHub releases, and
-offers any newer version. It installs only disk images signed with the private key that matches
+`appcast.xml` from the website, which builds it from the GitHub releases, and offers any newer
+version. The website's address is `WEBSITE_URL` in
+[`Base.xcconfig`](apps/mac/Config/Base.xcconfig): `https://localbolo.vercel.app` until the
+`localbolo.app` domain is set up, when it changes together with `NEXT_PUBLIC_SITE_URL` in
+`apps/web/.env.production`. It installs only disk images signed with the private key that matches
 `SPARKLE_PUBLIC_KEY` in [`Production.xcconfig`](apps/mac/Config/Production.xcconfig), so
 publishing a release is all it takes: installed copies see it within about ten minutes.
 Development builds have no feed and never update.
 
-Set up the keys once, before the first release that includes the updater:
+The keys were made once, for 0.2.0, with `scripts/generate-sparkle-keys.sh`. The private key is
+in the maintainer's login keychain and in the `production` environment's `SPARKLE_PRIVATE_KEY`
+secret. Keep a backup of it: without it, you can't ship updates to existing installs. To store
+it again, for example on a new Mac:
 
 ```sh
-scripts/generate-sparkle-keys.sh             # prints the public key; the private key stays in your keychain
 scripts/generate-sparkle-keys.sh --export | gh secret set SPARKLE_PRIVATE_KEY --env production
 ```
-
-Then put the public key in `SPARKLE_PUBLIC_KEY`. Releases fail early without it, since that
-version could never update itself. Keep a backup of the private key: without it, you can't ship
-updates to existing installs.
 
 ### Licensing
 
@@ -380,7 +381,7 @@ Metal Toolchain with `xcodebuild -downloadComponent MetalToolchain`.
 Audio is recorded only while you hold fn, is kept in memory, and is discarded as soon as it's
 transcribed. Transcripts are never written to disk. The app has no analytics and no account. Its
 network requests download the models you choose from Hugging Face, activate and re-check the
-license key with Dodo Payments, and check `localbolo.app` for updates. None of them include
+license key with Dodo Payments, and check the website for updates. None of them include
 audio or text.
 
 ## Acknowledgements
