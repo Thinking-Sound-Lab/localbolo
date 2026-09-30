@@ -1,3 +1,6 @@
+/** Base URL for absolute links such as link previews. Set per environment in .env.development / .env.production. */
+const url = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 /** Site-wide copy and links, kept in one place so pages stay consistent. */
 export const site = {
   name: "LocalBolo",
@@ -8,8 +11,9 @@ export const site = {
   /** The legal entity that sells LocalBolo, as it appears in the policies. */
   legalName: "Thinking Sound Lab Private Limited",
   supportEmail: "abhishek@ThinkingSoundLab.com",
-  /** Base URL for absolute links such as link previews. Set per environment in .env.development / .env.production. */
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  url,
+  /** The site's address as customers read it, such as "localbolo.vercel.app". */
+  domain: new URL(url).host,
   /** Where every Buy button goes: starts a Dodo Payments checkout (app/buy/route.ts). */
   purchaseUrl: "/buy",
   /** The newest version of the Mac app (app/download). It asks for a license key before it works. */

@@ -12,8 +12,7 @@ export const faq: { question: string; answer: string }[] = [
   },
   {
     question: "How do I install it after buying?",
-    answer:
-      "Download LocalBolo from the link after checkout, or any time at localbolo.app/download. Open it and enter the license key from the email Dodo Payments sends you. You only do that once per Mac.",
+    answer: `Download LocalBolo from the link after checkout, or any time at ${site.domain}${site.downloadUrl}. Open it and enter the license key from the email Dodo Payments sends you. You only do that once per Mac.`,
   },
   {
     question: "Can I use it on more than one Mac?",
@@ -21,8 +20,7 @@ export const faq: { question: string; answer: string }[] = [
   },
   {
     question: "I lost my license key. How do I find it?",
-    answer:
-      "Go to localbolo.app/license and enter the email you bought LocalBolo with. You'll get a sign-in link to a page that shows your key.",
+    answer: `Go to ${site.domain}${site.findLicenseUrl} and enter the email you bought LocalBolo with. You'll get a sign-in link to a page that shows your key.`,
   },
   {
     question: "Does it update itself?",
