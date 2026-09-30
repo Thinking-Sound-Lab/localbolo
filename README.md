@@ -23,8 +23,8 @@
 
 LocalBolo is a menu bar app that turns speech into text in any app: Mail, Slack, your code
 editor, a browser tab. Speech recognition runs on your Mac's Neural Engine and optional cleanup
-runs on its GPU, so **your voice never leaves your Mac**. There's no account, no server, and no
-internet connection needed after the models are downloaded.
+runs on its GPU, so **your voice never leaves your Mac**. There's no account and no server, and
+no internet connection is needed once the license is activated and the models are downloaded.
 
 ## Features
 
@@ -58,7 +58,7 @@ internet connection needed after the models are downloaded.
 | **Disk** | About 60 MB for the app, plus models: Parakeet ~450 MB, and optionally the cleanup model ~840 MB |
 | **Keyboard** | One whose fn / 🌐 key macOS can see, such as a MacBook keyboard or an Apple Magic Keyboard. Many third-party keyboards handle Fn internally and never report it. |
 | **Permissions** | Microphone (to record while fn is held) and Accessibility (to see fn from any app and paste with ⌘V) |
-| **Network** | Only to download models from Hugging Face the first time |
+| **Network** | To activate the license key and download models the first time; afterwards only for daily update checks and a license re-check about every two weeks |
 | **Language** | English |
 
 ## Getting started
@@ -159,6 +159,8 @@ apps/
 │   │   ├── Cleanup/              Optional language-model cleanup with MLX
 │   │   ├── ModelManagement/      Downloading, loading and switching models
 │   │   ├── TextInsertion/        Pasting and restoring the clipboard
+│   │   ├── License/              Activating and re-checking the license key
+│   │   ├── Updates/              Automatic updates with Sparkle
 │   │   ├── System/               Permissions, System Settings links, logging
 │   │   └── UI/                   Pill, menu bar, onboarding and settings
 │   └── LocalBoloTests/
@@ -169,6 +171,7 @@ brand/                            The wordmark and monogram, as SVG
 docs/images/                      Screenshots for this README
 scripts/
 ├── generate-icons.swift          Draws the app, menu bar and website icons from the monogram
+├── generate-sparkle-keys.sh      Creates the key pair that signs updates, once
 └── release-mac.sh                Builds, signs, notarizes and packages a release
 ```
 
@@ -268,8 +271,9 @@ LocalBolo is distributed from the website only, not through the Mac App Store. R
 signed with Thinking Sound Lab's Developer ID and notarized by Apple. Notarization is Apple's
 automated malware check, and without it macOS refuses to open apps downloaded from the internet.
 Nothing is uploaded to App Store Connect. [`scripts/release-mac.sh`](scripts/release-mac.sh) does the work:
-it archives the production app, signs it, notarizes and staples it, and packages a signed,
-notarized `LocalBolo.dmg`. The version comes from the command line or the tag.
+it archives the production app, signs it, notarizes and staples it, packages a signed,
+notarized `LocalBolo.dmg`, and signs that for the app's updater. The version comes from the
+command line or the tag; the build number, which the updater compares, goes up with every run.
 
 **From GitHub (recommended).** Tag a commit on `main` and push the tag.
 [`.github/workflows/release.yml`](.github/workflows/release.yml) waits for a maintainer to
@@ -292,19 +296,63 @@ It needs these secrets, once, in the repository's `production` environment
 | `DEVELOPER_ID_CERTIFICATE_PASSWORD` | The password chosen when exporting the `.p12` |
 | `NOTARY_APPLE_ID` | The Apple ID (email) of a member of the Thinking Sound Lab developer team |
 | `NOTARY_APP_SPECIFIC_PASSWORD` | An app-specific password for that Apple ID, created at [account.apple.com](https://account.apple.com) › Sign-In and Security › App-Specific Passwords |
+| `SPARKLE_PRIVATE_KEY` | The key that signs updates, from `scripts/generate-sparkle-keys.sh --export` (see [Updates](#updates)) |
 
 **From your Mac.** Store notarization credentials in the keychain once, then run the script:
 
 ```sh
 xcrun notarytool store-credentials LocalBolo --apple-id <you@example.com> --team-id 4M5LV534N5
 scripts/release-mac.sh 0.2.0
-gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes
+gh release create v0.2.0 build/release/LocalBolo.dmg --generate-notes --notes "$(cat build/release/sparkle.txt)"
 ```
 
-This repository is internal, so its releases are only visible to members of the organization.
-The website sells LocalBolo through Dodo Payments, which delivers the disk image to buyers by
-email. Attach each new `LocalBolo.dmg` to the product in the Dodo dashboard; see
-[Payments](apps/web/README.md#payments).
+This repository is internal, so the website serves its releases: `localbolo.app/download` is
+always the newest disk image, and buyers activate it with the license key Dodo Payments emails
+them. See [Payments](apps/web/README.md#payments).
+
+### Updates
+
+The app updates itself with [Sparkle](https://sparkle-project.org). Once a day it reads
+`https://localbolo.app/appcast.xml`, which the website builds from the GitHub releases, and
+offers any newer version. It installs only disk images signed with the private key that matches
+`SPARKLE_PUBLIC_KEY` in [`Production.xcconfig`](apps/mac/Config/Production.xcconfig), so
+publishing a release is all it takes: installed copies see it within about ten minutes.
+Development builds have no feed and never update.
+
+Set up the keys once, before the first release that includes the updater:
+
+```sh
+scripts/generate-sparkle-keys.sh             # prints the public key; the private key stays in your keychain
+scripts/generate-sparkle-keys.sh --export | gh secret set SPARKLE_PRIVATE_KEY --env production
+```
+
+Then put the public key in `SPARKLE_PUBLIC_KEY`. Releases fail early without it, since that
+version could never update itself. Keep a backup of the private key: without it, you can't ship
+updates to existing installs.
+
+### Licensing
+
+The app asks for a license key the first time it opens. Keys come from Dodo Payments, which
+enforces how many Macs each key can be active on at once (2, set on the product's License Key
+entitlement and shown on the website from `macsPerLicense` in `apps/web/src/lib/site.ts`).
+
+- **One activation per Mac.** Each activation records an anonymous ID for the Mac, a hash of its
+  hardware UUID ([`MachineIdentity`](apps/mac/LocalBolo/License/MachineIdentity.swift)).
+  Settings copied to another Mac, for example by Migration Assistant, don't carry the license.
+- **Re-checked every two weeks, required monthly.** The app validates the key and this Mac's
+  activation with Dodo every 14 days. If it can't for 30 days, it asks to connect once before
+  dictating again. Refunds disable the key in Dodo, so a refunded copy stops at its next check.
+  Turning the clock back makes it check again before dictating.
+- **Moving and recovering.** Settings › License deactivates a Mac. For a lost or broken Mac,
+  deactivate its activation in the Dodo dashboard (it's listed by the Mac's name and ID).
+  Buyers who lose their key use `localbolo.app/license`, Dodo's customer portal.
+
+Development builds use Dodo's test mode, so test-mode keys work there.
+
+Because the source is public, anyone can build a copy without the check; the license in
+[LICENSE.md](LICENSE.md) is what forbids using or sharing that. The check keeps honest buyers
+honest, stops keys being shared beyond their limit, and ends refunded copies, which is what
+license checks in any Mac app can realistically do.
 
 ## Troubleshooting
 
@@ -331,7 +379,9 @@ Metal Toolchain with `xcodebuild -downloadComponent MetalToolchain`.
 
 Audio is recorded only while you hold fn, is kept in memory, and is discarded as soon as it's
 transcribed. Transcripts are never written to disk. The app has no analytics and no account. Its
-only network requests download the models you choose from Hugging Face.
+network requests download the models you choose from Hugging Face, activate and re-check the
+license key with Dodo Payments, and check `localbolo.app` for updates. None of them include
+audio or text.
 
 ## Acknowledgements
 
@@ -347,3 +397,10 @@ LocalBolo is built on excellent open source projects and models:
   [Qwen 3](https://huggingface.co/Qwen/Qwen3-0.6B) (Apache 2.0).
 - [swift-transformers](https://github.com/huggingface/swift-transformers) (Apache 2.0) provides
   the tokenizers.
+- [Sparkle](https://sparkle-project.org) (MIT) installs updates.
+
+## License
+
+LocalBolo is commercial software with public source code; see [LICENSE.md](LICENSE.md). You
+can read it, build it to evaluate it, and contribute to it, but everyday use needs a license
+key from [localbolo.app](https://localbolo.app), and builds can't be redistributed.

@@ -62,14 +62,19 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
           NOTARY_PASSWORD: ${{ secrets.NOTARY_APP_SPECIFIC_PASSWORD }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: scripts/release-mac.sh "${GITHUB_REF_NAME#v}"
 
+      # The release notes start with the Sparkle signature as a hidden comment.
+      # The website's update feed (localbolo.app/appcast.xml) reads it, so
+      # installed copies see the update within minutes of publishing.
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" build/release/LocalBolo.dmg \
             --title "LocalBolo ${GITHUB_REF_NAME#v}" \
+            --notes "$(cat build/release/sparkle.txt)" \
             --generate-notes
 
       - name: Remove the signing keychain and certificate

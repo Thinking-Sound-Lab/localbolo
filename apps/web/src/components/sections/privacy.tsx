@@ -11,7 +11,7 @@ const facts = [
   },
   {
     title: "No account",
-    body: "Install it, allow microphone and accessibility access, and start talking.",
+    body: "Enter your license key, allow microphone and accessibility access, and start talking.",
   },
   {
     title: "Nothing is kept",

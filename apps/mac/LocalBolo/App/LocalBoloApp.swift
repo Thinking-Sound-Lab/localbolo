@@ -20,6 +20,9 @@ struct LocalBoloApp: App {
         }
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
+        // Open whenever setup is incomplete, such as after an update that asks
+        // for a license key, rather than restoring however it was left.
+        .restorationBehavior(.disabled)
         .defaultLaunchBehavior(model.needsSetup ? .presented : .suppressed)
 
         Settings {

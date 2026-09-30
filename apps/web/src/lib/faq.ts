@@ -11,6 +11,25 @@ export const faq: { question: string; answer: string }[] = [
     answer: `Yes. If LocalBolo isn't right for you, email us within ${site.refundDays} days of buying it for a full refund, no questions asked.`,
   },
   {
+    question: "How do I install it after buying?",
+    answer:
+      "Download LocalBolo from the link after checkout, or any time at localbolo.app/download. Open it and enter the license key from the email Dodo Payments sends you. You only do that once per Mac.",
+  },
+  {
+    question: "Can I use it on more than one Mac?",
+    answer: `Yes. One license works on up to ${site.macsPerLicense} of your Macs at a time. To move it to a new Mac, deactivate the old one in LocalBolo's Settings › License. If that Mac is lost or broken, email us and we'll free it up.`,
+  },
+  {
+    question: "I lost my license key. How do I find it?",
+    answer:
+      "Go to localbolo.app/license and enter the email you bought LocalBolo with. You'll get a sign-in link to a page that shows your key.",
+  },
+  {
+    question: "Does it update itself?",
+    answer:
+      "Yes. LocalBolo checks for updates once a day and installs a new version with one click. You can turn automatic checks off in Settings.",
+  },
+  {
     question: "Which Macs does LocalBolo run on?",
     answer:
       "Any Mac with Apple Silicon (M1 or newer) running macOS 15 Sequoia or later. The speech models run on the Neural Engine, which Intel Macs don't have.",
@@ -18,7 +37,7 @@ export const faq: { question: string; answer: string }[] = [
   {
     question: "Does it need an internet connection?",
     answer:
-      "Only once, to download the speech model you choose. After that, dictation works completely offline.",
+      "Only to activate your license key and download the speech model you choose. After that, dictation works offline. LocalBolo re-checks your license every two weeks when you're online, and needs to reach the internet at least once a month to keep working.",
   },
   {
     question: "Why does it need Accessibility access?",

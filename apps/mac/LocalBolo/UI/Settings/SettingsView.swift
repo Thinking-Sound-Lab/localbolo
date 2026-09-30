@@ -12,6 +12,9 @@ struct SettingsView: View {
             Tab("Cleanup", systemImage: "wand.and.sparkles") {
                 CleanupSettingsView()
             }
+            Tab("License", systemImage: "key") {
+                LicenseSettingsView()
+            }
         }
         .frame(width: 520)
         .onAppear { NSApp.activate() }
@@ -53,10 +56,101 @@ private struct GeneralSettingsView: View {
                         LaunchAtLogin.isEnabled = isEnabled
                     }
             }
+
+            if app.updater.isAvailable {
+                UpdatesSection()
+            }
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear { isGlobeKeyDoNothing = GlobeKeySetting.isSetToDoNothing }
+    }
+}
+
+private struct UpdatesSection: View {
+    @Environment(AppModel.self) private var app
+    @State private var checksAutomatically = false
+
+    var body: some View {
+        Section("Updates") {
+            Toggle("Check for updates automatically", isOn: $checksAutomatically)
+                .onChange(of: checksAutomatically) { _, isOn in
+                    app.updater.automaticallyChecksForUpdates = isOn
+                }
+            LabeledContent("Version \(Bundle.main.shortVersion)") {
+                Button("Check Now") { app.updater.checkForUpdates() }
+                    .disabled(!app.updater.canCheckForUpdates)
+            }
+        }
+        .onAppear { checksAutomatically = app.updater.automaticallyChecksForUpdates }
+    }
+}
+
+private struct LicenseSettingsView: View {
+    @Environment(AppModel.self) private var app
+    @State private var isConfirmingDeactivation = false
+
+    var body: some View {
+        Form {
+            Section {
+                if let activation = app.license.activation {
+                    LabeledContent("Status") {
+                        if app.license.status == .active {
+                            Label("Activated on this Mac", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            HStack {
+                                Label("Needs a check", systemImage: "exclamationmark.circle.fill")
+                                    .foregroundStyle(.orange)
+                                Button("Check Now") { Task { await app.license.verifyNow() } }
+                                    .disabled(app.license.isWorking)
+                            }
+                        }
+                    }
+                    LabeledContent("License key") {
+                        Text(activation.licenseKey)
+                            .font(.body.monospaced())
+                            .textSelection(.enabled)
+                    }
+                    LabeledContent("Moving to another Mac?") {
+                        Button("Deactivate This Mac…") { isConfirmingDeactivation = true }
+                            .disabled(app.license.isWorking)
+                    }
+                    if let error = app.license.errorMessage {
+                        Text(error)
+                            .foregroundStyle(.red)
+                    }
+                } else {
+                    LabeledContent("License key") {
+                        LicenseKeyField()
+                    }
+                }
+            } footer: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your license key is in the email from Dodo Payments. Deactivating this Mac frees it up to use on another one. LocalBolo checks the key every two weeks, and needs to reach Dodo at least once a month.")
+                    Link("Lost your key?", destination: AppLinks.findLicense)
+                }
+                .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .fixedSize(horizontal: false, vertical: true)
+        .confirmationDialog(
+            "Deactivate LocalBolo on this Mac?",
+            isPresented: $isConfirmingDeactivation
+        ) {
+            Button("Deactivate", role: .destructive) {
+                Task { await app.license.deactivate() }
+            }
+        } message: {
+            Text("Dictation stops working here until you enter a license key again. You can use the same key on this Mac or another one.")
+        }
+    }
+}
+
+private extension Bundle {
+    var shortVersion: String {
+        object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
 }
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keys Xcode can't generate from build settings. Xcode merges this file with
+  the generated Info.plist; the values come from the xcconfig files.
+-->
+<plist version="1.0">
+<dict>
+	<!-- Dodo Payments' license API, which activates and validates license keys. -->
+	<key>LicenseServerURL</key>
+	<string>$(LICENSE_SERVER_URL)</string>
+	<!-- Sparkle updates. Without a feed URL and public key, updates are off. -->
+	<key>SUFeedURL</key>
+	<string>$(SPARKLE_FEED_URL)</string>
+	<key>SUPublicEDKey</key>
+	<string>$(SPARKLE_PUBLIC_KEY)</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+</dict>
+</plist>

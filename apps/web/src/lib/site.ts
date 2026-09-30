@@ -12,6 +12,8 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   /** Where every Buy button goes: starts a Dodo Payments checkout (app/buy/route.ts). */
   purchaseUrl: "/buy",
+  /** The newest version of the Mac app (app/download). It asks for a license key before it works. */
+  downloadUrl: "/download",
   price: {
     amount: 49,
     currency: "USD",
@@ -19,6 +21,10 @@ export const site = {
   },
   /** How long after buying a customer can ask for a full refund. */
   refundDays: 7,
+  /** How many Macs one license key can be active on at a time. Keep in step with the activation limit in Dodo. */
+  macsPerLicense: 2,
+  /** Where buyers look up a lost license key (app/license: Dodo's customer portal). */
+  findLicenseUrl: "/license",
   requirements: "macOS 15 or later · Apple Silicon",
 } as const;
 
@@ -38,6 +44,7 @@ export const footerLinks = [
     title: "Support",
     links: [
       { label: "Help & contact", href: "/support" },
+      { label: "Find my license key", href: "/license", prefetch: false },
       { label: "System requirements", href: "/support#requirements" },
       { label: "FAQ", href: "/#faq" },
       { label: "Changelog", href: "/changelog" },
