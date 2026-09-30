@@ -3,8 +3,14 @@
 // what differs between them.
 
 PRODUCT_MODULE_NAME = LocalBolo
-MARKETING_VERSION = 0.1.0
+MARKETING_VERSION = 0.2.0
 CURRENT_PROJECT_VERSION = 1
+
+// The website the app links to and reads updates from. It's the Vercel
+// project's own address until the localbolo.app domain is set up; change it
+// together with NEXT_PUBLIC_SITE_URL in apps/web/.env.production.
+// (`/$()/` stops xcconfig from reading `//` as a comment.)
+WEBSITE_URL = https:/$()/localbolo.vercel.app
 
 // Speech models run on the Neural Engine, so only Apple Silicon is supported.
 MACOSX_DEPLOYMENT_TARGET = 15.0

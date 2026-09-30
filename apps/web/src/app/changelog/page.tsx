@@ -11,6 +11,16 @@ export const metadata = pageMetadata({
 /** Releases, newest first. */
 const releases: { version: string; date: string; changes: string[] }[] = [
   {
+    version: "0.2",
+    date: "September 30, 2026",
+    changes: [
+      "LocalBolo asks for your license key the first time it opens, then walks you through permissions.",
+      `Each key works on up to ${site.macsPerLicense} Macs. Settings › License shows your key and frees this Mac for another one.`,
+      "LocalBolo now updates itself. It checks for new versions once a day, and Check for Updates… is in the menu bar. If you have 0.1, download 0.2 once; it takes care of updates from then on.",
+      "A new app icon and menu bar icon.",
+    ],
+  },
+  {
     version: "0.1",
     date: "September 28, 2026",
     changes: [
