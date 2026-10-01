@@ -30,6 +30,7 @@ src/
     pixel-cascade.tsx    Pixels piling up from the corners of the final call to action
     card.tsx             Hairline cards, their 001-style numbers, and framed illustrations
     buy-button.tsx       The square Buy button, secondary links and corner marks
+    analytics.tsx        Vercel Web Analytics, without the purchase page's payment ID
     logo.tsx             The wordmark (the logo) and the monogram
     pill.tsx             The dictation pill, matching the Mac app's design
   lib/

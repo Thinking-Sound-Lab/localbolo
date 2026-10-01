@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Geist_Pixel } from "next/font/google";
+import { Analytics } from "@/components/analytics";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       {/* "Back to top" links point here. */}
       <body id="top" className="min-h-full font-sans">
         {children}
+        <Analytics />
       </body>
     </html>
   );

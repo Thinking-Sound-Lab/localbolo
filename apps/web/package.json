@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
+    "@vercel/analytics": "2.0.1",
     "dodopayments": "2.52.0",
     "next": "16.3.6",
     "react": "19.2.8",
