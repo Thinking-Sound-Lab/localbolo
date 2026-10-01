@@ -35,5 +35,5 @@ export const releases: { version: string; date: string; changes: string[] }[] = 
   },
 ];
 
-/** The newest release. Adding a release at the top of the list updates the hero too. */
+/** The newest release, for the hero's badge when GitHub's releases can't be read. */
 export const latestRelease = releases[0];

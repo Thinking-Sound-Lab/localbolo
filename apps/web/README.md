@@ -38,7 +38,7 @@ src/
     purchases.ts         The record of who bought LocalBolo, in Supabase
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
-    changelog.ts         Every release, newest first: the changelog page and the hero's "Version …" badge
+    changelog.ts         Every release, newest first, for the changelog page
     wordmark.ts          The wordmark as one SVG path, traced from the logo artwork
     monogram.ts          The monogram as one SVG path
     pixel-icons.ts       Every pixel-art icon, drawn as text, including a pixel wordmark
