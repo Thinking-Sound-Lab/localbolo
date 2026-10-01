@@ -315,9 +315,9 @@ them. See [Payments](apps/web/README.md#payments).
 The app updates itself with [Sparkle](https://sparkle-project.org). Once a day it reads
 `appcast.xml` from the website, which builds it from the GitHub releases, and offers any newer
 version. The website's address is `WEBSITE_URL` in
-[`Base.xcconfig`](apps/mac/Config/Base.xcconfig): `https://localbolo.vercel.app` until the
-`localbolo.app` domain is set up, when it changes together with `NEXT_PUBLIC_SITE_URL` in
-`apps/web/.env.production`. It installs only disk images signed with the private key that matches
+[`Base.xcconfig`](apps/mac/Config/Base.xcconfig), `https://localbolo.app`, which changes
+together with `NEXT_PUBLIC_SITE_URL` in `apps/web/.env.production`. Version 0.2.0 reads its
+updates from `https://localbolo.vercel.app`, so keep that address on the Vercel project. It installs only disk images signed with the private key that matches
 `SPARKLE_PUBLIC_KEY` in [`Production.xcconfig`](apps/mac/Config/Production.xcconfig), so
 publishing a release is all it takes: installed copies see it within about ten minutes.
 Development builds have no feed and never update.

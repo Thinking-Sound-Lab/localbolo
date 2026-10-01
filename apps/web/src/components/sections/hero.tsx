@@ -4,9 +4,14 @@ import { BuyButton, SecondaryLink } from "@/components/buy-button";
 import { HeroDemo } from "@/components/hero-demo";
 import { PixelWave } from "@/components/pixel-wave";
 import { latestRelease } from "@/lib/changelog";
+import { findRelease } from "@/lib/releases";
 import { site } from "@/lib/site";
 
-export function Hero() {
+export async function Hero() {
+  // The newest version people can download, so the badge never announces a
+  // release before it's published. The changelog stands in if GitHub can't be reached.
+  const version = (await findRelease())?.version ?? latestRelease.version;
+
   return (
     <section className="overflow-hidden">
       <div className="mx-auto flex max-w-6xl flex-col items-center px-6 pt-16 text-center sm:pt-24">
@@ -16,7 +21,7 @@ export function Hero() {
         >
           <span className="flex items-center gap-2 bg-mist px-3 py-1.5 text-ink-soft">
             <span aria-hidden className="size-1.5 bg-blue" />
-            Version {latestRelease.version} is out for Mac
+            Version {version} is out for Mac
           </span>
           <span className="flex items-center border-l border-line px-3 py-1.5 font-medium">
             What&apos;s new ↗

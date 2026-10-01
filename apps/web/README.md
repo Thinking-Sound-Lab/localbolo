@@ -38,7 +38,7 @@ src/
     purchases.ts         The record of who bought LocalBolo, in Supabase
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
-    changelog.ts         Every release, newest first: the changelog page and the hero's "Version …" badge
+    changelog.ts         Every release, newest first, for the changelog page
     wordmark.ts          The wordmark as one SVG path, traced from the logo artwork
     monogram.ts          The monogram as one SVG path
     pixel-icons.ts       Every pixel-art icon, drawn as text, including a pixel wordmark
@@ -171,7 +171,7 @@ Every page also gets a canonical URL and matching link previews from `pageMetada
 | File | Used by | Contents |
 | --- | --- | --- |
 | `.env.development` | `pnpm dev` | `NEXT_PUBLIC_SITE_URL=http://localhost:3000` |
-| `.env.production` | `pnpm build`, deployments | `NEXT_PUBLIC_SITE_URL=https://localbolo.vercel.app`, until the `localbolo.app` domain is set up |
+| `.env.production` | `pnpm build`, deployments | `NEXT_PUBLIC_SITE_URL=https://localbolo.app` |
 | `.env.local` | Everything, git-ignored | Local overrides and secrets, such as the Dodo Payments and Supabase keys (see `.env.local.example`) |
 
 `NEXT_PUBLIC_SITE_URL` is the base for absolute URLs: canonical links, the sitemap and link
