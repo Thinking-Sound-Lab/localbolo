@@ -166,6 +166,7 @@ apps/
 │   └── LocalBoloTests/
 └── web/                          Marketing site (Next.js 16, Tailwind CSS 4)
 .github/workflows/                CI (quick checks on pull requests, full checks in the merge queue) and releases
+.claude/skills/release-notes/     How to write a release's notes (for coding agents)
 AGENTS.md                         How coding agents should check and merge their work
 brand/                            The wordmark and monogram, as SVG
 docs/images/                      Screenshots for this README
@@ -275,6 +276,13 @@ it archives the production app, signs it, notarizes and staples it, packages a s
 notarized `LocalBolo.dmg`, and signs that for the app's updater. The version comes from the
 command line or the tag; the build number, which the updater compares, goes up with every run.
 
+**First, write what's new.** Each version needs an entry in
+[`apps/web/src/lib/changelog.ts`](apps/web/src/lib/changelog.ts), written for users, in the same
+pull request that sets `MARKETING_VERSION`. The app's update window and the website's changelog
+both show it. GitHub's generated release notes are never shown to users. The release workflow
+stops if the entry is missing, and
+[`.claude/skills/release-notes`](.claude/skills/release-notes/SKILL.md) explains how to write it.
+
 **From GitHub (recommended).** Tag a commit on `main` and push the tag.
 [`.github/workflows/release.yml`](.github/workflows/release.yml) waits for a maintainer to
 approve the run (Actions › the run › **Review deployments**), then builds the disk image and
@@ -285,7 +293,8 @@ git tag v0.2.0 origin/main
 git push origin v0.2.0
 ```
 
-Tags that don't point to a commit on `main` are rejected before any secret is used.
+Tags that don't point to a commit on `main`, or whose version isn't in the changelog, are
+rejected before any secret is used.
 
 It needs these secrets, once, in the repository's `production` environment
 (Settings › Environments):

@@ -31,6 +31,16 @@ jobs:
             exit 1
           fi
 
+      - name: Check that the changelog describes this version
+        # The app's update window and the website's changelog show these notes,
+        # so a release needs them. See .claude/skills/release-notes/SKILL.md.
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! grep -qF "version: \"$version\"" apps/web/src/lib/changelog.ts; then
+            echo "::error::Add LocalBolo $version to apps/web/src/lib/changelog.ts before releasing it."
+            exit 1
+          fi
+
       - name: Select Xcode
         run: sudo xcode-select --switch /Applications/Xcode_26.6.app
 

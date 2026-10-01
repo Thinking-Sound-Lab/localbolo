@@ -1,6 +1,11 @@
 import { site } from "@/lib/site";
 
-/** Releases of the Mac app, newest first, for the changelog and the hero's badge. */
+/**
+ * Every release of the Mac app, newest first, written for the people who use
+ * it. The website's changelog and the app's update window both show these, so
+ * write them with .claude/skills/release-notes/SKILL.md. `version` is the
+ * release tag without the v, such as "0.2.1".
+ */
 export const releases: { version: string; date: string; changes: string[] }[] = [
   {
     version: "0.2.1",
@@ -10,7 +15,7 @@ export const releases: { version: string; date: string; changes: string[] }[] = 
     ],
   },
   {
-    version: "0.2",
+    version: "0.2.0",
     date: "September 30, 2026",
     changes: [
       "LocalBolo asks for your license key the first time it opens, then walks you through permissions.",
@@ -20,7 +25,7 @@ export const releases: { version: string; date: string; changes: string[] }[] = 
     ],
   },
   {
-    version: "0.1",
+    version: "0.1.0",
     date: "September 28, 2026",
     changes: [
       "Hold fn anywhere to dictate, and let go to paste the text at your cursor.",

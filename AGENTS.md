@@ -27,6 +27,14 @@ xcodebuild build -project LocalBolo.xcodeproj -scheme LocalBolo -configuration R
   ARCHS=arm64 CODE_SIGNING_ALLOWED=NO
 ```
 
+## Releasing a version
+
+Every release needs user-facing notes in `apps/web/src/lib/changelog.ts`. They're what people see in
+the app's update window and on the website's changelog. Write them with the
+[release-notes skill](.claude/skills/release-notes/SKILL.md): plain language about what users will
+notice, with no pull request numbers, links or code names. The release workflow refuses a tag whose
+version has no entry.
+
 ## Pull requests
 
 **Open a pull request, then stop. Merging is the maintainer's decision.**

@@ -40,7 +40,8 @@ src/
     analytics.ts         What page views leave out before they're sent: the buyer's payment ID
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
-    changelog.ts         Every release, newest first, for the changelog page
+    changelog.ts         Every release, newest first, written for users: the changelog page and the update window
+    release-notes.ts     Turns the changelog into the notes in the app's update window
     wordmark.ts          The wordmark as one SVG path, traced from the logo artwork
     monogram.ts          The monogram as one SVG path
     pixel-icons.ts       Every pixel-art icon, drawn as text, including a pixel wordmark
@@ -88,7 +89,7 @@ which run on the server:
 | `/purchase` | Where Dodo sends buyers back. It looks up the `payment_id` from the URL with Dodo, so a crafted link can't fake a confirmation, and reports the outcome. It shows nothing private, since anyone with the link sees it: license keys go out by email only. It's `noindex` and sends no referrer. |
 | `/api/webhooks/dodo` | Verifies each webhook's signature and updates the [record of purchases](#purchases) when a payment succeeds, is refunded or disputed, or gets its license key. |
 | `/download` | Redirects to the newest `LocalBolo.dmg` from the GitHub releases; `/download/v0.2.0` to a specific one. |
-| `/appcast.xml` | The update feed the app's updater (Sparkle) checks, rebuilt every ten minutes from the GitHub releases. |
+| `/appcast.xml` | The update feed the app's updater (Sparkle) checks, rebuilt every ten minutes from the GitHub releases. Its notes come from `src/lib/changelog.ts`, not GitHub: each update lists every version newer than the one installed (see `src/lib/release-notes.ts`). |
 
 ### Setting it up
 
