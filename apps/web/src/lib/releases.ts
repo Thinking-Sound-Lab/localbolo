@@ -44,10 +44,17 @@ type GitHubRelease = {
 
 /** Published releases, newest first. Empty when GitHub can't be reached. */
 export async function listReleases(): Promise<Release[]> {
-  const response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=30`, {
-    headers: githubHeaders("application/vnd.github.full+json"),
-    next: { revalidate: releasesRevalidateSeconds },
-  });
+  let response;
+  try {
+    response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=30`, {
+      headers: githubHeaders("application/vnd.github.full+json"),
+      next: { revalidate: releasesRevalidateSeconds },
+    });
+  } catch (error) {
+    // Offline or DNS failure: no answer at all, rather than an error status.
+    console.error("Couldn't reach GitHub for releases:", error);
+    return [];
+  }
   if (!response.ok) {
     console.error(`Couldn't list GitHub releases: ${response.status}`);
     return [];
