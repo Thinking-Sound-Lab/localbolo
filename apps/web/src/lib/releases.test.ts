@@ -74,7 +74,6 @@ function release(
     prerelease: changes.prerelease ?? false,
     published_at: "2026-10-01T00:00:00Z",
     body: changes.body ?? "Notes",
-    body_html: "<p>Notes</p>",
     assets: changes.assets ?? [
       { id: 1, name: "LocalBolo.dmg", browser_download_url: `https://github.com/downloads/${tag}/LocalBolo.dmg` },
     ],

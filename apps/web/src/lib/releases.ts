@@ -26,7 +26,6 @@ export type Release = {
   /** For example "0.2.0". */
   version: string;
   publishedAt: string;
-  notesHtml: string;
   diskImage: { id: number; url: string };
   /** Missing for releases made before the app could update itself. */
   update?: SparkleUpdate;
@@ -38,7 +37,6 @@ type GitHubRelease = {
   prerelease: boolean;
   published_at: string | null;
   body: string | null;
-  body_html?: string;
   assets: { id: number; name: string; browser_download_url: string }[];
 };
 
@@ -50,7 +48,7 @@ export async function listReleases(): Promise<Release[] | null> {
   let response;
   try {
     response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=30`, {
-      headers: githubHeaders("application/vnd.github.full+json"),
+      headers: githubHeaders("application/vnd.github+json"),
       next: { revalidate: releasesRevalidateSeconds },
     });
   } catch (error) {
@@ -72,7 +70,6 @@ export async function listReleases(): Promise<Release[] | null> {
         tag: release.tag_name,
         version: release.tag_name.replace(/^v/, ""),
         publishedAt: release.published_at,
-        notesHtml: release.body_html ?? "",
         diskImage: { id: diskImage.id, url: diskImage.browser_download_url },
         update: parseSparkleComment(release.body ?? ""),
       },
