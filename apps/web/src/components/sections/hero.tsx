@@ -3,6 +3,7 @@ import { AsciiHover, AsciiText } from "@/components/ascii-hover";
 import { BuyButton, SecondaryLink } from "@/components/buy-button";
 import { HeroDemo } from "@/components/hero-demo";
 import { PixelWave } from "@/components/pixel-wave";
+import { latestRelease } from "@/lib/changelog";
 import { site } from "@/lib/site";
 
 export function Hero() {
@@ -15,7 +16,7 @@ export function Hero() {
         >
           <span className="flex items-center gap-2 bg-mist px-3 py-1.5 text-ink-soft">
             <span aria-hidden className="size-1.5 bg-blue" />
-            Version 0.1 is out for Mac
+            Version {latestRelease.version} is out for Mac
           </span>
           <span className="flex items-center border-l border-line px-3 py-1.5 font-medium">
             What&apos;s new ↗
