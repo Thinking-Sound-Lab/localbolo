@@ -3,6 +3,13 @@ import { site } from "@/lib/site";
 /** Releases of the Mac app, newest first, for the changelog and the hero's badge. */
 export const releases: { version: string; date: string; changes: string[] }[] = [
   {
+    version: "0.2.1",
+    date: "October 1, 2026",
+    changes: [
+      "LocalBolo's website is now localbolo.app. The app's links and update checks use the new address.",
+    ],
+  },
+  {
     version: "0.2",
     date: "September 30, 2026",
     changes: [
