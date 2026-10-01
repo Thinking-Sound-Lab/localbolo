@@ -30,13 +30,14 @@ src/
     pixel-cascade.tsx    Pixels piling up from the corners of the final call to action
     card.tsx             Hairline cards, their 001-style numbers, and framed illustrations
     buy-button.tsx       The square Buy button, secondary links and corner marks
-    analytics.tsx        Vercel Web Analytics, without the purchase page's payment ID
+    analytics.tsx        Vercel Web Analytics
     logo.tsx             The wordmark (the logo) and the monogram
     pill.tsx             The dictation pill, matching the Mac app's design
   lib/
     site.ts              Name, price, refund window, contact, purchase link, footer links
     dodo.ts              The Dodo Payments client and product
     purchases.ts         The record of who bought LocalBolo, in Supabase
+    analytics.ts         What page views leave out before they're sent: the buyer's payment ID
     models.ts            Speech model list (mirrors the Mac app)
     faq.ts               FAQ, shown on the page and published as structured data
     changelog.ts         Every release, newest first: the changelog page and the hero's "Version …" badge

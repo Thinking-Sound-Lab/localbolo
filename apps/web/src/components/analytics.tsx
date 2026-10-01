@@ -1,19 +1,9 @@
 "use client";
 
-import { Analytics as VercelAnalytics, type BeforeSendEvent } from "@vercel/analytics/next";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
+import { withoutPaymentDetails } from "@/lib/analytics";
 
-/**
- * Vercel Web Analytics: anonymous page views, with no cookies. The purchase
- * page's address carries the buyer's payment ID, so it's sent without its
- * query string.
- */
+/** Vercel Web Analytics: anonymous page views, with no cookies and no payment IDs. */
 export function Analytics() {
   return <VercelAnalytics beforeSend={withoutPaymentDetails} />;
-}
-
-function withoutPaymentDetails(event: BeforeSendEvent): BeforeSendEvent {
-  const url = new URL(event.url);
-  if (url.pathname !== "/purchase") return event;
-  url.search = "";
-  return { ...event, url: url.toString() };
 }
