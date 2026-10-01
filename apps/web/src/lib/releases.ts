@@ -45,23 +45,16 @@ type GitHubRelease = {
  * outage, or a rate limit), so callers can tell that apart from no releases.
  */
 export async function listReleases(): Promise<Release[] | null> {
-  let response;
-  try {
-    response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=30`, {
-      headers: githubHeaders("application/vnd.github+json"),
-      next: { revalidate: releasesRevalidateSeconds },
-    });
-  } catch (error) {
-    // Offline or DNS failure: no answer at all, rather than an error status.
-    console.error("Couldn't reach GitHub for releases:", error);
-    return null;
-  }
-  if (!response.ok) {
-    console.error(`Couldn't list GitHub releases: ${response.status}`);
-    return null;
+  // Every release, not just the latest page: the update window needs the
+  // build number of whichever version a Mac still has, however old.
+  const releases: GitHubRelease[] = [];
+  for (let page = 1; ; page++) {
+    const batch = await fetchReleasePage(page);
+    if (!batch) return null;
+    releases.push(...batch);
+    if (batch.length < releasesPerPage) break;
   }
 
-  const releases = (await response.json()) as GitHubRelease[];
   return releases.flatMap((release) => {
     const diskImage = release.assets.find((asset) => asset.name === diskImageName);
     if (release.draft || release.prerelease || !diskImage || !release.published_at) return [];
@@ -75,6 +68,29 @@ export async function listReleases(): Promise<Release[] | null> {
       },
     ];
   });
+}
+
+/** GitHub's largest page of releases. */
+const releasesPerPage = 100;
+
+/** One page of releases, newest first, or null when GitHub can't be read. */
+async function fetchReleasePage(page: number): Promise<GitHubRelease[] | null> {
+  let response;
+  try {
+    response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=${releasesPerPage}&page=${page}`, {
+      headers: githubHeaders("application/vnd.github+json"),
+      next: { revalidate: releasesRevalidateSeconds },
+    });
+  } catch (error) {
+    // Offline or DNS failure: no answer at all, rather than an error status.
+    console.error("Couldn't reach GitHub for releases:", error);
+    return null;
+  }
+  if (!response.ok) {
+    console.error(`Couldn't list GitHub releases: ${response.status}`);
+    return null;
+  }
+  return (await response.json()) as GitHubRelease[];
 }
 
 /**
