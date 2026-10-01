@@ -42,8 +42,11 @@ type GitHubRelease = {
   assets: { id: number; name: string; browser_download_url: string }[];
 };
 
-/** Published releases, newest first. Empty when GitHub can't be reached. */
-export async function listReleases(): Promise<Release[]> {
+/**
+ * Published releases, newest first, or null when GitHub can't be read (an
+ * outage, or a rate limit), so callers can tell that apart from no releases.
+ */
+export async function listReleases(): Promise<Release[] | null> {
   let response;
   try {
     response = await fetch(`https://api.github.com/repos/${repository}/releases?per_page=30`, {
@@ -53,11 +56,11 @@ export async function listReleases(): Promise<Release[]> {
   } catch (error) {
     // Offline or DNS failure: no answer at all, rather than an error status.
     console.error("Couldn't reach GitHub for releases:", error);
-    return [];
+    return null;
   }
   if (!response.ok) {
     console.error(`Couldn't list GitHub releases: ${response.status}`);
-    return [];
+    return null;
   }
 
   const releases = (await response.json()) as GitHubRelease[];
@@ -77,9 +80,13 @@ export async function listReleases(): Promise<Release[]> {
   });
 }
 
-/** The release with this tag or version, or the newest one. */
+/**
+ * The release with this tag or version, or the newest one: undefined if there's
+ * no such release, null if GitHub can't be read.
+ */
 export async function findRelease(version?: string) {
   const releases = await listReleases();
+  if (!releases) return null;
   if (!version) return releases[0];
   return releases.find((release) => release.tag === version || release.version === version);
 }

@@ -10,7 +10,8 @@ export const revalidate = 600;
  * one only if its signature matches the app's public key.
  */
 export async function GET() {
-  const items = (await listReleases())
+  // If GitHub can't be read, offer no updates rather than fail; the app checks again later.
+  const items = ((await listReleases()) ?? [])
     .filter((release): release is Release & { update: SparkleUpdate } => release.update !== undefined)
     .map(item)
     .join("");

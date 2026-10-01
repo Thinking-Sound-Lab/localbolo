@@ -9,19 +9,27 @@ describe("listReleases", () => {
   });
   afterEach(() => mock.restoreAll());
 
-  test("is empty when GitHub can't be reached", async () => {
+  test("is null when GitHub can't be reached", async () => {
     mock.method(globalThis, "fetch", async () => {
       throw new TypeError("fetch failed");
     });
 
-    assert.deepEqual(await listReleases(), []);
-    assert.equal(await findRelease(), undefined);
+    assert.equal(await listReleases(), null);
+    assert.equal(await findRelease(), null);
   });
 
-  test("is empty when GitHub answers with an error", async () => {
+  test("is null when GitHub answers with an error", async () => {
     mock.method(globalThis, "fetch", async () => new Response("rate limited", { status: 403 }));
 
+    assert.equal(await listReleases(), null);
+  });
+
+  test("is empty when nothing is published yet", async () => {
+    mock.method(globalThis, "fetch", async () => Response.json([]));
+
     assert.deepEqual(await listReleases(), []);
+    assert.equal(await findRelease(), undefined);
+    assert.equal(await findRelease("v9.9.9"), undefined);
   });
 
   test("lists published releases that have a disk image, newest first", async () => {
@@ -37,7 +45,7 @@ describe("listReleases", () => {
       ]),
     );
 
-    const releases = await listReleases();
+    const releases = (await listReleases()) ?? [];
 
     assert.deepEqual(
       releases.map((release) => release.version),

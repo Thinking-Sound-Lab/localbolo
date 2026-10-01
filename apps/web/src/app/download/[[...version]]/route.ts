@@ -9,6 +9,9 @@ import { site } from "@/lib/site";
 export async function GET(_request: Request, context: RouteContext<"/download/[[...version]]">) {
   const { version } = await context.params;
   const release = await findRelease(version?.[0]);
+  if (release === null) {
+    return unavailable("Downloads aren't available right now. Please try again in a minute.", 503);
+  }
   if (!release) {
     return unavailable(version ? `There's no ${site.name} ${version[0]}.` : "There's no version to download yet.", 404);
   }
