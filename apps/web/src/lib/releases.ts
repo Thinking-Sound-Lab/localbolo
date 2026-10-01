@@ -50,7 +50,13 @@ export async function listReleases(): Promise<Release[] | null> {
   const releases: GitHubRelease[] = [];
   for (let page = 1; ; page++) {
     const batch = await fetchReleasePage(page);
-    if (!batch) return null;
+    // Without the first page there's nothing to offer. Without a later one,
+    // the newest releases still are: at worst, notes for a very old version
+    // show again until the next refresh.
+    if (!batch) {
+      if (page === 1) return null;
+      break;
+    }
     releases.push(...batch);
     if (batch.length < releasesPerPage) break;
   }

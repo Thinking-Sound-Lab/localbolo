@@ -51,14 +51,17 @@ describe("listReleases", () => {
     assert.equal(releases.at(-1)?.version, "0.9.0");
   });
 
-  test("is null when a later page can't be read", async () => {
+  test("keeps the newest releases when an older page can't be read", async () => {
     mock.method(globalThis, "fetch", async (url: string) =>
       new URL(url).searchParams.get("page") === "1"
-        ? Response.json(Array.from({ length: 100 }, (_, index) => release(`v1.${index}.0`)))
+        ? Response.json(Array.from({ length: 100 }, (_, index) => release(`v1.${99 - index}.0`)))
         : new Response("rate limited", { status: 403 }),
     );
 
-    assert.equal(await listReleases(), null);
+    const releases = (await listReleases()) ?? [];
+
+    assert.equal(releases.length, 100);
+    assert.equal((await findRelease())?.version, "1.99.0");
   });
 
   test("lists published releases that have a disk image, newest first", async () => {
