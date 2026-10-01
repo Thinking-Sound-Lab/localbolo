@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 export const metadata = pageMetadata({
   path: "/privacy",
   title: "Privacy policy",
-  description: `How ${site.name} handles your voice and data: recordings stay on your Mac, with no accounts, analytics, or tracking.`,
+  description: `How ${site.name} handles your voice and data: recordings stay on your Mac, and the app has no accounts, analytics, or tracking.`,
 });
 
 const email = <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>;
@@ -128,10 +128,13 @@ const sections: DocSection[] = [
     title: "This website",
     content: (
       <p>
-        This website sets no cookies and has no analytics or advertising trackers. Fonts are served
-        from this site rather than a third party. Vercel, which hosts the site, may keep standard
-        server logs, such as IP addresses and browser types, to deliver the site and protect it
-        from abuse.
+        This website sets no cookies and has no advertising trackers. It counts visits with Vercel
+        Web Analytics, which is anonymous: for each page view it records the page, the site you came
+        from, your country, and your browser, operating system and type of device, never your IP
+        address or anything that identifies you, and it forgets visitors after 24 hours. Fonts are
+        served from this site rather than a third party. Vercel, which hosts the site, may keep
+        standard server logs, such as IP addresses and browser types, to deliver the site and
+        protect it from abuse.
       </p>
     ),
   },
@@ -230,7 +233,7 @@ export default function PrivacyPage() {
         </>
       }
       intro={`${site.name} is built so that there is nothing to collect. Here is exactly what the app and this website do with your data.`}
-      updated="September 29, 2026"
+      updated="October 1, 2026"
       sections={sections}
     />
   );
