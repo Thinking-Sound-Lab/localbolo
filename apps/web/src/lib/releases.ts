@@ -45,35 +45,57 @@ type GitHubRelease = {
  * outage, or a rate limit), so callers can tell that apart from no releases.
  */
 export async function listReleases(): Promise<Release[] | null> {
-  // Every release, not just the latest page: the update window needs the
-  // build number of whichever version a Mac still has, however old.
+  return (await readReleases())?.releases ?? null;
+}
+
+/**
+ * The release with this tag or version, or the newest one: undefined if there's
+ * no such release, null if GitHub can't be read.
+ */
+export async function findRelease(version?: string) {
+  const read = await readReleases();
+  if (!read) return null;
+  if (!version) return read.releases[0];
+  const release = read.releases.find((release) => release.tag === version || release.version === version);
+  // A version on a page that couldn't be read isn't missing, just unavailable for now.
+  return release ?? (read.complete ? undefined : null);
+}
+
+/**
+ * Every release, not just the latest page: the update window needs the build
+ * number of whichever version a Mac still has, however old. Without the first
+ * page there's nothing to offer, so that's null. Without a later one, the
+ * newest releases still are, marked incomplete.
+ */
+async function readReleases(): Promise<{ releases: Release[]; complete: boolean } | null> {
   const releases: GitHubRelease[] = [];
+  let complete = true;
   for (let page = 1; ; page++) {
     const batch = await fetchReleasePage(page);
-    // Without the first page there's nothing to offer. Without a later one,
-    // the newest releases still are: at worst, notes for a very old version
-    // show again until the next refresh.
     if (!batch) {
       if (page === 1) return null;
+      complete = false;
       break;
     }
     releases.push(...batch);
     if (batch.length < releasesPerPage) break;
   }
 
-  return releases.flatMap((release) => {
-    const diskImage = release.assets.find((asset) => asset.name === diskImageName);
-    if (release.draft || release.prerelease || !diskImage || !release.published_at) return [];
-    return [
-      {
-        tag: release.tag_name,
-        version: release.tag_name.replace(/^v/, ""),
-        publishedAt: release.published_at,
-        diskImage: { id: diskImage.id, url: diskImage.browser_download_url },
-        update: parseSparkleComment(release.body ?? ""),
-      },
-    ];
-  });
+  return { releases: releases.flatMap(publishedRelease), complete };
+}
+
+function publishedRelease(release: GitHubRelease): Release[] {
+  const diskImage = release.assets.find((asset) => asset.name === diskImageName);
+  if (release.draft || release.prerelease || !diskImage || !release.published_at) return [];
+  return [
+    {
+      tag: release.tag_name,
+      version: release.tag_name.replace(/^v/, ""),
+      publishedAt: release.published_at,
+      diskImage: { id: diskImage.id, url: diskImage.browser_download_url },
+      update: parseSparkleComment(release.body ?? ""),
+    },
+  ];
 }
 
 /** GitHub's largest page of releases. */
@@ -97,17 +119,6 @@ async function fetchReleasePage(page: number): Promise<GitHubRelease[] | null> {
     return null;
   }
   return (await response.json()) as GitHubRelease[];
-}
-
-/**
- * The release with this tag or version, or the newest one: undefined if there's
- * no such release, null if GitHub can't be read.
- */
-export async function findRelease(version?: string) {
-  const releases = await listReleases();
-  if (!releases) return null;
-  if (!version) return releases[0];
-  return releases.find((release) => release.tag === version || release.version === version);
 }
 
 /**

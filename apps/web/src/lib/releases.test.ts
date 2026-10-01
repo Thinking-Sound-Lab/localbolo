@@ -62,6 +62,8 @@ describe("listReleases", () => {
 
     assert.equal(releases.length, 100);
     assert.equal((await findRelease())?.version, "1.99.0");
+    // An older version might be on the page that failed: unavailable, not missing.
+    assert.equal(await findRelease("v0.1.0"), null);
   });
 
   test("lists published releases that have a disk image, newest first", async () => {
