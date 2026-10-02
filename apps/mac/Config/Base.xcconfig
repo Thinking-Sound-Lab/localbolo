@@ -3,7 +3,7 @@
 // what differs between them.
 
 PRODUCT_MODULE_NAME = LocalBolo
-MARKETING_VERSION = 0.2.1
+MARKETING_VERSION = 0.3.0
 CURRENT_PROJECT_VERSION = 1
 
 // The website the app links to and reads updates from. Change it together
