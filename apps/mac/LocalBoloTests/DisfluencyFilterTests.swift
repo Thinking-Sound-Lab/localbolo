@@ -14,6 +14,10 @@ struct DisfluencyFilterTests {
         ("That's all from my side, um.", "That's all from my side."),
         ("That's it, uh", "That's it"),
         ("uh iPhone is fine", "iPhone is fine"),
+        // After a word a comma can follow, one comma stays.
+        ("Bring apples, um, oranges and pears.", "Bring apples, oranges and pears."),
+        ("Okay, um, let's get started.", "Okay, let's get started."),
+        ("I don't know, uh, maybe we should ask.", "I don't know, maybe we should ask."),
     ])
     func removesFillers(transcript: String, expected: String) {
         #expect(DisfluencyFilter.clean(transcript) == expected)
@@ -42,6 +46,13 @@ struct DisfluencyFilterTests {
         "Call 555 555 1234.",
         "That is what it is. Is it ready?",
         "The summer was hot. The winter was cold.",
+        // Capitals make it a name, not a hesitation or a repeat.
+        "Take him to the ER.",
+        "We asked IT, it said no.",
+        // A repeat that ends the sentence is said for emphasis.
+        "So what, so what?",
+        "It's fine, it's fine.",
+        "I do, I do.",
     ])
     func leavesIntendedWordsAlone(transcript: String) {
         #expect(DisfluencyFilter.clean(transcript) == transcript)

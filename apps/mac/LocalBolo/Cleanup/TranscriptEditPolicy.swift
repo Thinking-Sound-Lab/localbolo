@@ -4,7 +4,7 @@ import Foundation
 /// edit can be trusted.
 nonisolated enum TranscriptEditPolicy {
     /// Phrases that can mean "ignore what I just said".
-    private static let correctionCues = [
+    private static let correctionPhrases = [
         "sorry", "i mean", "i meant", "actually", "wait", "no wait", "scratch that", "strike that",
         "never mind", "nevermind", "make that", "rather", "or rather", "correction", "let me rephrase",
         "no no", "oops",
@@ -52,21 +52,21 @@ nonisolated enum TranscriptEditPolicy {
         var passages: [ClosedRange<Int>] = []
 
         for (index, sentence) in sentences.enumerated() {
-            let words = words(in: sentence)
-            let cueStarts = starts(of: correctionCues + fillerCues, in: words)
-            let opensWithNo = index > 0 && sentence.prefixMatch(of: /\s*no,/.ignoresCase()) != nil
-            let hasNoAside = sentence.contains(/,\s*no,/.ignoresCase())
-            guard !cueStarts.isEmpty || opensWithNo || hasNoAside else { continue }
+            let spoken = Spoken(sentence)
+            // Nothing comes before a dictation's first word, so a cue there takes nothing back.
+            let corrections = correctionCues(in: spoken).filter { index > 0 || $0.lowerBound > 0 }
+            let hasFiller = !starts(of: fillerCues, in: spoken.words).isEmpty
+            guard !corrections.isEmpty || hasFiller else { continue }
 
             var first = index
             var last = index
             // A sentence that opens with the cue takes back something in the one before:
             // "at nine. No, at ten."
-            if index > 0, opensWithNo || cueStarts.contains(where: { $0 < 3 }) {
+            if index > 0, corrections.contains(where: { $0.lowerBound < 3 }) {
                 first = index - 1
             }
             // "Scratch that." on its own: include what follows, so the edit isn't empty.
-            if words.count <= 3, index + 1 < sentences.count {
+            if spoken.words.count <= 3, index + 1 < sentences.count {
                 last = index + 1
             }
 
@@ -77,6 +77,22 @@ nonisolated enum TranscriptEditPolicy {
             }
         }
         return passages
+    }
+
+    /// Where the speaker may be taking something back: a correction phrase
+    /// said after a pause, as in "at nine, sorry, at ten".
+    ///
+    /// Without the pause the same words are meant as they're said ("we had
+    /// to wait", "it's actually faster"), so they don't count. "No" also has
+    /// to be followed by a comma, to tell "No, at ten" from "no idea".
+    private static func correctionCues(in spoken: Spoken) -> [Range<Int>] {
+        let phrases = correctionPhrases.flatMap { phrase in
+            starts(of: [phrase], in: spoken.words).map { $0..<$0 + phrase.count }
+        }
+        let nos = spoken.words.indices
+            .filter { spoken.words[$0] == "no" && spoken.precedesComma[$0] }
+            .map { $0..<$0 + 1 }
+        return (phrases + nos).filter { spoken.followsPause[$0.lowerBound] }
     }
 
     // MARK: - Whether to trust an edit
@@ -93,7 +109,8 @@ nonisolated enum TranscriptEditPolicy {
     /// answer to a dictated question, means the model went beyond editing.
     static func isFaithful(_ edited: String, to original: String) -> Bool {
         let editedWords = words(in: edited)
-        let originalWords = words(in: original)
+        let spoken = Spoken(original)
+        let originalWords = spoken.words
         guard !editedWords.isEmpty else { return false }
         guard editedWords != originalWords else { return true }
 
@@ -120,12 +137,14 @@ nonisolated enum TranscriptEditPolicy {
             }
         }
 
+        let cues = correctionCues(in: spoken)
+
         // Swapped-in words must be the speaker's own, said after a correction phrase later on.
         var corrections: Set<Range<Int>> = []
         for (removed, inserted) in replacements {
             guard inserted.count <= 4, removed.count <= inserted.count + 2 else { return false }
             let correction = removals.first {
-                $0.lowerBound >= removed.upperBound && restates(inserted, in: Array(originalWords[$0]))
+                $0.lowerBound >= removed.upperBound && restates(inserted, in: $0, of: originalWords, cues: cues)
             }
             guard let correction else { return false }
             corrections.insert(correction)
@@ -139,7 +158,8 @@ nonisolated enum TranscriptEditPolicy {
             let after = originalWords[removal.upperBound...].prefix(run.count)
             let before = originalWords[..<removal.lowerBound].suffix(run.count)
             let isDoubled = after.elementsEqual(run) || before.elementsEqual(run)
-            return corrections.contains(removal) || isDoubled || isOnlyFiller(run) || isTakenBack(run)
+            return corrections.contains(removal) || isDoubled || isOnlyFiller(run)
+                || isTakenBack(removal, cues: cues)
         }
     }
 
@@ -153,17 +173,15 @@ nonisolated enum TranscriptEditPolicy {
         return true
     }
 
-    /// Whether `run` reads as words the speaker withdrew: something said,
-    /// then a correction phrase, then at most a few words restarting the sentence.
-    private static func isTakenBack(_ run: [String]) -> Bool {
-        var cueWords = correctionCues.flatMap { cue in
-            starts(of: [cue], in: run).flatMap { $0..<$0 + cue.count }
+    /// Whether the removed words read as something the speaker withdrew:
+    /// something said, then a correction phrase, then at most a few words
+    /// restarting the sentence.
+    private static func isTakenBack(_ removal: Range<Int>, cues: [Range<Int>]) -> Bool {
+        let cues = cues.filter { removal.lowerBound <= $0.lowerBound && $0.upperBound <= removal.upperBound }
+        guard let first = cues.map(\.lowerBound).min(), let last = cues.map(\.upperBound).max() else {
+            return false
         }
-        // A bare "no" only counts at the very end: "at nine, no".
-        if run.last == "no" { cueWords.append(run.count - 1) }
-
-        guard let first = cueWords.min(), let last = cueWords.max() else { return false }
-        return first >= 1 && run.count - last - 1 <= 3
+        return first > removal.lowerBound && removal.upperBound - last <= 3
     }
 
     /// Whether an edit that only removes words kept what the speaker took
@@ -183,15 +201,21 @@ nonisolated enum TranscriptEditPolicy {
             }
         }
         return removedRuns.contains { run in
-            run.first == "no" || correctionCues.contains { run.starts(with: $0) }
+            run.first == "no" || correctionPhrases.contains { run.starts(with: $0) }
         }
     }
 
-    /// Whether `run` is a correction phrase followed by `inserted`, with at most a few other words.
-    private static func restates(_ inserted: [String], in run: [String]) -> Bool {
-        (correctionCues + [["no"]]).contains { cue in
-            guard run.starts(with: cue) else { return false }
-            let rest = Array(run.dropFirst(cue.count))
+    /// Whether the removed words are a correction phrase followed by
+    /// `inserted`, with at most a few other words.
+    private static func restates(
+        _ inserted: [String],
+        in removal: Range<Int>,
+        of original: [String],
+        cues: [Range<Int>]
+    ) -> Bool {
+        cues.contains { cue in
+            guard cue.lowerBound == removal.lowerBound, cue.upperBound <= removal.upperBound else { return false }
+            let rest = Array(original[cue.upperBound..<removal.upperBound])
             return rest.count - inserted.count <= 3 && !starts(of: [inserted], in: rest).isEmpty
         }
     }
@@ -200,10 +224,22 @@ nonisolated enum TranscriptEditPolicy {
 
     /// Lowercased words, ignoring punctuation and apostrophes ("Let's" and "lets" match).
     static func words(in text: String) -> [String] {
-        text.lowercased()
-            .replacing(/['’]/, with: "")
-            .split { !$0.isLetter && !$0.isNumber }
-            .map(String.init)
+        Spoken(text).words
+    }
+
+    /// A text's words as the policy compares them, with the pauses around them.
+    private struct Spoken {
+        let words: [String]
+        /// Whether each word starts the text or comes after punctuation.
+        let followsPause: [Bool]
+        let precedesComma: [Bool]
+
+        init(_ text: String) {
+            let spoken = SpokenWords(text).words
+            words = spoken.map { $0.normalized.replacing("'", with: "") }
+            followsPause = spoken.indices.map { $0 == 0 || spoken[$0 - 1].separator.marksPause }
+            precedesComma = spoken.map { $0.separator.contains(",") }
+        }
     }
 
     /// Where any of `phrases` begins in `words`.

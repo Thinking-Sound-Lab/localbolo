@@ -40,15 +40,21 @@ actor TranscriptEditor {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Gets the model ready to edit without a wait: reads the instructions and
-    /// examples if it hasn't yet, and runs one short edit.
+    /// Gets the model ready to edit without a wait, by running one short edit.
     ///
     /// This runs when the model loads, so MLX compiles its GPU kernels then,
-    /// and again at the start of each dictation. On a Mac that's short of
+    /// and again at the start of every dictation. On a Mac that's short of
     /// memory, macOS moves an idle app's memory to disk within seconds, and
     /// bringing a model back takes a second or more. That is better spent
     /// while the user is still speaking than after they've finished.
     func warmUp() async throws {
+        try await readPromptOnce()
+        _ = try await edit("The meeting is at noon. Sorry, at one.")
+    }
+
+    /// Runs the start of the prompt, which every edit shares, through the
+    /// model and keeps the result. Only the first call does anything.
+    private func readPromptOnce() async throws {
         try await container.perform { [memory, model] context in
             guard memory.cache == nil else { return }
 
@@ -71,7 +77,6 @@ actor TranscriptEditor {
             memory.cache = cache
             memory.tokens = shared
         }
-        _ = try await edit("The meeting is at noon. Sorry, at one.")
     }
 
     // MARK: - Generation

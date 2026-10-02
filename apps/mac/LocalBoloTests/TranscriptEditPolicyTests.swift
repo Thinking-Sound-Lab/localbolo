@@ -20,6 +20,14 @@ struct TranscriptEditPolicyTests {
         "No, I don't think so.",
         "I have no idea. Ask him.",
         "Thanks!",
+        // Without a pause before them, these words are meant as they're said.
+        "We had to wait two hours for a table.",
+        "It's actually faster to take the train.",
+        "I would rather not discuss salaries over email.",
+        "What I mean is that the test is flaky.",
+        "I'm sorry for the late reply.",
+        // Nothing comes before it to take back.
+        "Sorry, I can't make it to dinner tonight.",
     ])
     func skipsTheModelWhenNothingWasTakenBack(transcript: String) {
         let sentences = TranscriptEditPolicy.sentences(in: transcript)
@@ -34,6 +42,7 @@ struct TranscriptEditPolicyTests {
         ("Send it to Alex. Wait, send it to Jordan. Thanks.", [0...1]),
         ("Move the standup to nine thirty. No, ten o'clock.", [0...1]),
         ("The store opens at eight, no, at nine.", [0...0]),
+        ("The meeting is on Monday. Well, no, on Tuesday.", [0...1]),
         // A cue on its own needs the sentence after it too.
         ("First point. Call the dentist. Strike that. Call the doctor. Last point.", [1...3]),
         ("The total is one, sorry, two. Nothing to fix here. The count is three, I mean four.", [0...0, 2...2]),
@@ -84,6 +93,12 @@ struct TranscriptEditPolicyTests {
         // Dropping a cue word that was meant literally.
         ("I can't make it to dinner tonight.", "Sorry, I can't make it to dinner tonight."),
         ("The messages need to be helpful.", "The messages need to be actually helpful."),
+        // Dropping a clause because a word in it could have been a cue.
+        (
+            "I checked the invoice, and they'll approve.",
+            "I checked the invoice, we need to wait for the manager, and they'll approve."
+        ),
+        ("The test is flaky.", "What I mean is that the test is flaky."),
         // Rewording.
         ("I think that approach won't scale.", "I think that that approach will not scale."),
         // Keeping the version the speaker took back.

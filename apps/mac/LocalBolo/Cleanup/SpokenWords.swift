@@ -12,6 +12,12 @@ nonisolated struct SpokenWords {
         var normalized: String {
             text.lowercased().replacing("’", with: "'")
         }
+
+        /// Written in capitals, like "ER" or "IT". These are names, not the
+        /// small words they happen to spell.
+        var isAcronym: Bool {
+            text.count > 1 && text == text.uppercased() && text.contains(where: \.isLetter)
+        }
     }
 
     /// Whatever comes before the first word.
@@ -54,5 +60,11 @@ nonisolated extension String {
     /// Whether this separator closes a sentence.
     var endsSentence: Bool {
         contains(/[.!?…]/)
+    }
+
+    /// Whether this separator marks a pause in speech: any punctuation a
+    /// speech model writes where the speaker stopped for a moment.
+    var marksPause: Bool {
+        contains(/[,.;:!?…—–]/)
     }
 }

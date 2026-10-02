@@ -22,7 +22,7 @@ nonisolated enum DisfluencyFilter {
     /// A doubled phrase is a stutter only if it starts like the beginning of
     /// a clause, which keeps "New York, New York" and "thank you, thank you".
     private static let phraseStarters = stutteredWords.union(
-        ["that", "so", "there", "then", "which", "who", "where", "why", "please"]
+        ["that", "so", "there", "then", "which", "who", "where", "why", "please", "had"]
     )
 
     static func clean(_ transcript: String) -> String {
@@ -39,7 +39,7 @@ nonisolated enum DisfluencyFilter {
         var index = 0
         while index < spoken.words.count {
             var word = spoken.words[index]
-            guard fillers.contains(word.normalized) else {
+            guard isFiller(word) else {
                 if capitalizesNext {
                     word.text = word.text.capitalizedIfLowercase
                     capitalizesNext = false
@@ -51,7 +51,7 @@ nonisolated enum DisfluencyFilter {
 
             // A run of fillers ("um, uh,") is removed as one.
             while index + 1 < spoken.words.count,
-                  fillers.contains(spoken.words[index + 1].normalized),
+                  isFiller(spoken.words[index + 1]),
                   !spoken.words[index].separator.endsSentence {
                 index += 1
             }
@@ -68,8 +68,11 @@ nonisolated enum DisfluencyFilter {
                 // "so, um." becomes "so."
                 let closing = after.replacing(/^[,\s]+/, with: "")
                 joined = closing.isEmpty || closing.prefixMatch(of: /[.!?…]/) != nil ? closing : " " + closing
-            } else if before.contains(","), after.contains(",") {
-                // The commas were around the filler: "I was, um, wondering" becomes "I was wondering".
+            } else if before.contains(","), after.contains(","), let previous = kept.last,
+                      phraseStarters.contains(previous.normalized) {
+                // No comma follows a word like "was", so both were around the filler:
+                // "I was, um, wondering" becomes "I was wondering". After any other word one
+                // comma stays, which keeps "apples, um, oranges" a list.
                 joined = " "
             } else if !before.isBlank {
                 joined = before
@@ -89,6 +92,11 @@ nonisolated enum DisfluencyFilter {
 
         spoken.words = kept
         return spoken.text
+    }
+
+    /// "ER" and "UM" in capitals are names, not hesitation.
+    private static func isFiller(_ word: SpokenWords.Word) -> Bool {
+        fillers.contains(word.normalized) && !word.isAcronym
     }
 
     // MARK: - Stutters
@@ -114,13 +122,19 @@ nonisolated enum DisfluencyFilter {
 
     /// Whether the `length` words at `index` are said twice in a row.
     private static func isStutter(at index: Int, length: Int, in words: [SpokenWords.Word]) -> Bool {
-        guard index + 2 * length <= words.count else { return false }
+        // A stutter is a false start, so the sentence carries on after it. A repeat that ends
+        // the sentence is said for emphasis: "So what, so what?"
+        guard index + 2 * length < words.count, !words[index + 2 * length - 1].separator.endsSentence else {
+            return false
+        }
         let first = words[index..<index + length].map(\.normalized)
         let second = words[index + length..<index + 2 * length].map(\.normalized)
         guard first == second else { return false }
 
         // Repeated digits are usually meant, as in a phone number.
         guard !first.contains(where: { $0.contains(where: \.isNumber) }) else { return false }
+        // "IT" is not a repeat of "it".
+        guard !words[index..<index + 2 * length].contains(where: \.isAcronym) else { return false }
         // Across a sentence or clause boundary it's a new start, not a stutter.
         guard words[index..<index + 2 * length - 1].allSatisfy({ !$0.separator.contains(/[.!?…;:]/) }) else {
             return false

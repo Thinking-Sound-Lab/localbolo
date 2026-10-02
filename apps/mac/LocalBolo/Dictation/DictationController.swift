@@ -100,6 +100,10 @@ final class DictationController {
 
     /// Starts getting the models ready while the user is still speaking, so
     /// they're not waited for once fn is released.
+    ///
+    /// If fn is released before this finishes, the real transcription waits
+    /// for the rest of it. That's no longer than waking the model would have
+    /// taken anyway, and at most a tenth of a second when it was already awake.
     private func warmUpModelsOnceHeld() {
         Task {
             // fn is also a modifier key. Wait until this is clearly a dictation.
