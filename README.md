@@ -33,8 +33,8 @@ no internet connection is needed once the license is activated and the models ar
 - **Shows where your words will land.** A small pill at the bottom of the screen grows into a
   live waveform next to the icon of the app that will receive the text.
 - **On-device and fast.** NVIDIA's Parakeet transcribes 38 seconds of speech in about 0.3 s on an M1.
-- **Cleans up as you talk (optional).** A small language model applies your self-corrections and
-  removes filler words: *"let's meet at 9 p.m., sorry, 10 p.m."* becomes *"Let's meet at 10 p.m."*
+- **Cleans up as you talk (optional).** Filler sounds are dropped and a small language model
+  applies your self-corrections: *"let's meet at 9 p.m., sorry, 10 p.m."* becomes *"Let's meet at 10 p.m."*
 - **Clipboard-safe.** Text is pasted through the clipboard, which is then restored.
 - **Choose your models.** Parakeet by default, or OpenAI Whisper in three sizes.
 
@@ -98,11 +98,16 @@ optimized for your Mac's Neural Engine. After that the app is ready in about 2 s
 Turn it on in **Settings › Cleanup** or from the menu bar. It downloads Qwen 2.5 1.5B (about
 840 MB) and runs it on the GPU with MLX:
 
-- **Only when needed.** Transcripts without filler words, repeated words or correction phrases
-  skip the model entirely, so most dictations aren't slowed down.
-- **Fast.** When it does run, an edit takes about 0.8 s on an M1.
-- **Guarded.** If the model adds words or drops most of the sentence (for example by answering
-  a question you dictated), LocalBolo pastes your original transcript instead.
+- **Rules first.** "Um", "uh" and accidentally doubled words ("the the", "can you can you") are
+  removed by plain rules, which take no time and can't change what you said.
+- **Only where needed.** The model only reads sentences where you may have corrected yourself
+  ("sorry", "I mean", "scratch that"). Every other sentence is pasted exactly as spoken, so a long
+  dictation is cleaned up as quickly as a short one.
+- **Fast.** An edit takes about 0.2 s on an M1. The model reads its instructions once, when it
+  loads, and checks your dictation as a draft instead of writing it out again word by word.
+- **Guarded.** An edit is used only if every change is one a correction explains: words you took
+  back may go, and nothing new may appear. Otherwise (for example if the model answers a question
+  you dictated) that sentence is pasted as you said it.
 
 ## Models
 
@@ -118,8 +123,8 @@ and can be switched or deleted in Settings.
 
 | Cleanup model | Runs with | Download | Notes |
 | --- | --- | --- | --- |
-| **Qwen 2.5 1.5B Instruct** (default) | [MLX](https://github.com/ml-explore/mlx-swift-lm), GPU | 880 MB | Most careful edits, about 0.8 s |
-| Qwen 3 0.6B | MLX, GPU | 350 MB | About twice as fast, occasionally trims too much |
+| **Qwen 2.5 1.5B Instruct** (default) | [MLX](https://github.com/ml-explore/mlx-swift-lm), GPU | 880 MB | Most reliable at applying corrections |
+| Qwen 3 0.6B | MLX, GPU | 350 MB | Half the memory, but misses more corrections |
 
 ## How it works
 
@@ -128,7 +133,7 @@ fn held ─▶ FnKeyMonitor ─▶ PushToTalkRecognizer ─▶ DictationControll
                                                      │
             AudioRecorder (16 kHz mono) ◀────────────┤ start / finish / cancel
             SpeechModelStore ─▶ Transcriber (Parakeet │ Whisper)
-            TranscriptCleanup ─▶ TranscriptEditor (Qwen via MLX)   optional
+            TranscriptCleanup ─▶ DisfluencyFilter (rules), TranscriptEditor (Qwen via MLX)   optional
             TextInserter (clipboard + ⌘V, then restore)
             PillController ─▶ PillView (target app icon + waveform)
 ```
@@ -139,6 +144,9 @@ A few details that are easy to miss:
   you're typing in keeps keyboard focus and receives the paste.
 - **Models are warmed up while they load.** The first inference compiles the model for the
   Neural Engine or GPU, so each model runs once on a dummy input before it's marked ready.
+- **And again as you start to speak.** On a Mac that's short of memory, macOS moves an idle app's
+  models to disk within seconds, and bringing them back takes a second or more. LocalBolo starts
+  that when you press fn, so it's done by the time you let go.
 - **Silence never reaches the model.** Silent recordings are dropped, which stops Whisper from
   inventing phrases like "Thank you."
 - **A missed fn release can't leave the mic on.** macOS stops sending key events while secure
@@ -156,7 +164,7 @@ apps/
 │   │   ├── Dictation/            fn push-to-talk and the dictation loop
 │   │   ├── Audio/                Microphone capture, resampling, loudness
 │   │   ├── Transcription/        Speech models: Parakeet and Whisper
-│   │   ├── Cleanup/              Optional language-model cleanup with MLX
+│   │   ├── Cleanup/              Optional cleanup: filler rules and a language model with MLX
 │   │   ├── ModelManagement/      Downloading, loading and switching models
 │   │   ├── TextInsertion/        Pasting and restoring the clipboard
 │   │   ├── License/              Activating and re-checking the license key

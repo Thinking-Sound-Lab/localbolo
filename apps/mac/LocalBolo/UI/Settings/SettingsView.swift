@@ -213,7 +213,7 @@ private struct CleanupSettingsView: View {
 
             Section {
             } footer: {
-                ModelStorageFooter(text: "A small language model runs on this Mac’s GPU. Only transcripts with filler words or corrections are sent to it, so most dictations aren’t slowed down.")
+                ModelStorageFooter(text: "Filler sounds and doubled words are removed instantly. A small language model on this Mac’s GPU applies your corrections, and it only reads the sentences that have one.")
             }
         }
         .formStyle(.grouped)

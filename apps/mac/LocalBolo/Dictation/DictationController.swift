@@ -91,9 +91,25 @@ final class DictationController {
                 Task { @MainActor in self?.updateAudioLevel(level) }
             }
             phase = .listening
+            warmUpModelsOnceHeld()
         } catch {
             Logger.dictation.error("Couldn't start recording: \(error.localizedDescription, privacy: .public)")
             showNotice("Couldn't start the microphone")
+        }
+    }
+
+    /// Starts getting the models ready while the user is still speaking, so
+    /// they're not waited for once fn is released.
+    private func warmUpModelsOnceHeld() {
+        Task {
+            // fn is also a modifier key. Wait until this is clearly a dictation.
+            try? await Task.sleep(for: .seconds(recognizer.minimumHoldDuration))
+            guard phase == .listening else { return }
+
+            // One runs on the Neural Engine and the other on the GPU, so neither waits for the other.
+            let transcriber = speechModels.transcriber
+            Task { try? await transcriber?.warmUp() }
+            await cleanup.warmUp()
         }
     }
 
