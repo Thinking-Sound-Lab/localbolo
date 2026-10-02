@@ -8,6 +8,16 @@ import { site } from "@/lib/site";
  */
 export const releases: { version: string; date: string; changes: string[] }[] = [
   {
+    version: "0.3.0",
+    date: "October 2, 2026",
+    changes: [
+      "Transcript cleanup is several times faster: about 0.2 seconds on an M1 instead of about a second, and a long dictation no longer takes longer to clean up than a short one.",
+      "Your text appears sooner when you haven't dictated for a while. LocalBolo now gets ready as soon as you hold fn, rather than after you let go.",
+      "Cleanup leaves more of what you said alone. It removes “um”, “uh” and accidentally doubled words, applies your corrections, and pastes every other sentence exactly as you spoke it.",
+      "Understands more ways of correcting yourself, such as “No, ten o'clock”, “oops” and “strike that”.",
+    ],
+  },
+  {
     version: "0.2.1",
     date: "October 1, 2026",
     changes: [

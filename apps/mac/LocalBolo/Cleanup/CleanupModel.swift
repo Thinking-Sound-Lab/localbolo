@@ -1,7 +1,7 @@
 /// Small language models that clean up transcripts, run on the GPU with MLX.
 ///
-/// Picked by benchmarking on an 8 GB M1: both edit a dictated sentence in
-/// about a second or less.
+/// Picked by benchmarking on an 8 GB M1 against the dictations in
+/// `CleanupEvaluation.json`: both edit a sentence in about a fifth of a second.
 nonisolated enum CleanupModel: String, LocalModel {
     case qwen25_1_5B = "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
     case qwen3_0_6B = "mlx-community/Qwen3-0.6B-4bit"
@@ -17,8 +17,8 @@ nonisolated enum CleanupModel: String, LocalModel {
 
     var summary: String {
         switch self {
-        case .qwen25_1_5B: "Most careful edits. About a second per cleanup."
-        case .qwen3_0_6B: "Twice as fast and a third of the size, but occasionally trims too much."
+        case .qwen25_1_5B: "Most reliable at applying your corrections."
+        case .qwen3_0_6B: "Half the memory and download, but misses more corrections."
         }
     }
 
