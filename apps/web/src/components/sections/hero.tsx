@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AsciiHover, AsciiText } from "@/components/ascii-hover";
 import { BuyButton, SecondaryLink } from "@/components/buy-button";
 import { HeroDemo } from "@/components/hero-demo";
+import { ProductHuntBadge } from "@/components/product-hunt-badge";
 import { PixelWave } from "@/components/pixel-wave";
 import { latestRelease } from "@/lib/changelog";
 import { findRelease } from "@/lib/releases";
@@ -52,6 +53,7 @@ export async function Hero() {
         <p className="mt-6 font-mono text-xs tracking-wide text-ink-faint">
           One-time purchase · {site.requirements}
         </p>
+        <ProductHuntBadge className="mt-8 transition-opacity hover:opacity-80" />
       </div>
 
       {/* The voice, as a pixel waveform, runs behind the top of the demo. */}
