@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"src/**/*.test.ts\""
+    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"src/**/*.test.ts\"",
+    "dodo:plans": "node --env-file-if-exists=.env.local scripts/setup-license-plans.mjs",
+    "appsumo:codes": "node --env-file-if-exists=.env.local scripts/appsumo-codes.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",

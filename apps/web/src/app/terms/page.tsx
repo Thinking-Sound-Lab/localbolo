@@ -34,8 +34,9 @@ const sections: DocSection[] = [
           is licensed to you, not sold.
         </p>
         <p>
-          You activate {site.name} with the license key from your purchase email. A key works on up
-          to {site.macsPerLicense} Macs at a time; to move it to a new Mac, deactivate it on the old
+          You activate {site.name} with the license key from your purchase email. Each new key activates
+          one, two, or five Macs at a time, according to your plan. Existing keys keep their
+          original activation limit. To move a key to a new Mac, deactivate it on the old
           one in {site.name}&apos;s Settings. {site.name} checks the key with our payment provider
           from time to time and needs to reach it at least once a month.
         </p>

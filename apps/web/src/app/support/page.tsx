@@ -39,7 +39,8 @@ const sections: DocSection[] = [
           the email from Dodo Payments you got after buying. You only enter it once per Mac.
         </p>
         <p>
-          One license works on up to {site.macsPerLicense} Macs at a time. Moving to a new Mac?
+          Each plan includes one license key for one, two, or five Macs, according to your purchase.
+          Existing keys keep their original activation limit. Moving to a new Mac?
           Open Settings › License on the old one and choose Deactivate This Mac, then enter the
           same key on the new one. If the old Mac is lost or broken, email {email} and we&apos;ll
           free up its activation.

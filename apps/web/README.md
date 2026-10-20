@@ -35,7 +35,9 @@ src/
     pill.tsx             The dictation pill, matching the Mac app's design
   lib/
     site.ts              Name, price, refund window, contact, purchase link, footer links
-    dodo.ts              The Dodo Payments client and product
+    pricing.ts           Plan prices, Mac activation limits, and product environment names
+    dodo.ts              The Dodo Payments client
+    checkout.ts          Verifies each product and quote before starting checkout
     purchases.ts         The record of who bought LocalBolo, in Supabase
     analytics.ts         What page views leave out before they're sent: the buyer's payment ID
     models.ts            Speech model list (mirrors the Mac app)
@@ -85,7 +87,7 @@ which run on the server:
 
 | Route | What it does |
 | --- | --- |
-| `/buy` | Creates a checkout session for the LocalBolo product and redirects to Dodo's checkout. Every Buy button links here. |
+| `/buy?plan=single`, `duo`, or `team` | Verifies the product, activation limit, and checkout quote, then redirects to Dodo for one key covering 1 Mac/$49, 2 Macs/$99, or 5 Macs/$299. `/buy` defaults to 1 Mac. |
 | `/purchase` | Where Dodo sends buyers back. It looks up the `payment_id` from the URL with Dodo, so a crafted link can't fake a confirmation, and reports the outcome. It shows nothing private, since anyone with the link sees it: license keys go out by email only. It's `noindex` and sends no referrer. |
 | `/api/webhooks/dodo` | Verifies each webhook's signature and updates the [record of purchases](#purchases) when a payment succeeds, is refunded or disputed, or gets its license key. |
 | `/download` | Redirects to the newest `LocalBolo.dmg` from the GitHub releases; `/download/v0.2.0` to a specific one. |
@@ -93,13 +95,14 @@ which run on the server:
 
 ### Setting it up
 
-1. In the Dodo dashboard, in **test mode**, create a product: LocalBolo for Mac, a one-time price
-   of $49, tax category *Digital products*. Add a **License Key** entitlement with no expiry and
-   an activation limit (for example 2 Macs), and an activation message such as "Download
-   LocalBolo at https://localbolo.app/download and enter this key when it asks."
+1. In **test mode**, run `pnpm dodo:plans --execute` with a test Dodo API key and mode
+   loaded. It creates/reuses three license entitlements and products: one key for
+   1 Mac/$49, 2 Macs/$99, or 5 Macs/$299. The website displays original prices of
+   $69/$159/$399. Set the three product IDs it prints; see
+   [license plans and the 10,000-code CSV exporter](docs/appsumo-codes.md).
 2. Create an API key, and a webhook pointing at `https://<your domain>/api/webhooks/dodo` with
    `payment.succeeded`, `refund.succeeded`, `license_key.created` and every `dispute.` event.
-3. Copy `.env.local.example` to `.env.local` and fill in the API key, product ID, business ID and
+3. Copy `.env.local.example` to `.env.local` and fill in the API key, product IDs, business ID and
    webhook secret. Buy with one of Dodo's test cards to try the whole flow; development builds
    of the app activate test-mode keys.
 4. To go live, repeat steps 1 and 2 in **live mode** (products and keys don't carry over), then

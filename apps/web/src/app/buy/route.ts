@@ -1,4 +1,6 @@
-import { dodoClient, dodoProductId } from "@/lib/dodo";
+import { dodoClient } from "@/lib/dodo";
+import { createPlanCheckout } from "@/lib/checkout";
+import { licensePlan } from "@/lib/pricing";
 
 /**
  * Starts a purchase: creates a Dodo Payments checkout session for LocalBolo
@@ -6,23 +8,20 @@ import { dodoClient, dodoProductId } from "@/lib/dodo";
  * /purchase with the outcome.
  */
 export async function GET(request: Request) {
+  const plan = licensePlan(new URL(request.url).searchParams.get("plan"));
+  if (!plan) return Response.json({ error: "Unknown license plan" }, { status: 400 });
   const dodo = dodoClient();
-  if (!dodo || !dodoProductId) {
-    console.error("Checkout isn't configured: set DODO_PAYMENTS_API_KEY and DODO_PAYMENTS_PRODUCT_ID.");
+  const productId = process.env[plan.productEnv];
+  if (!dodo || !productId) {
+    console.error(`Checkout isn't configured for the ${plan.id} plan.`);
     return redirectToOutcome(request, "unavailable");
   }
 
   try {
-    const session = await dodo.checkoutSessions.create({
-      product_cart: [{ product_id: dodoProductId, quantity: 1 }],
-      // Back to the site the visitor came from, so previews and local runs work too.
-      return_url: new URL("/purchase", request.url).toString(),
-    });
-    if (!session.checkout_url) throw new Error("Dodo returned no checkout URL");
-
-    return Response.redirect(session.checkout_url, 303);
-  } catch (error) {
-    console.error("Couldn't create a Dodo checkout session:", error);
+    const checkoutUrl = await createPlanCheckout(dodo, plan, productId, request.url);
+    return Response.redirect(checkoutUrl, 303);
+  } catch {
+    console.error(`Couldn't create a matching Dodo checkout for the ${plan.id} plan.`);
     return redirectToOutcome(request, "unavailable");
   }
 }
