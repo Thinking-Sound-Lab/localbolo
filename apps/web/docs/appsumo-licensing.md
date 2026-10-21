@@ -17,8 +17,8 @@ code. Existing Dodo keys and separately exported `LBAS-` codes keep using Dodo.
 
 ## Configure and release
 
-1. Apply `supabase/migrations/20261021010000_appsumo_licensing.sql` to the website's
-   Supabase project using the normal migration workflow. It adds private tables
+1. Apply the `supabase/migrations/*_appsumo_*.sql` migrations, in order, to the website's
+   Supabase project using the normal migration workflow. They add private tables
    and server-only RPCs; browser keys cannot read or mutate licenses.
 2. Set these server-only variables in the intended Vercel environment, using
    separate credentials/database for staging. Never use `NEXT_PUBLIC_` names:
