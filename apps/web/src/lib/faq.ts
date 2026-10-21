@@ -1,26 +1,27 @@
 import { site } from "@/lib/site";
+import { licensePlans } from "./pricing.ts";
 
 /** Frequently asked questions, shown on the home page and published as structured data. */
 export const faq: { question: string; answer: string }[] = [
   {
     question: "How much does LocalBolo cost?",
-    answer: `${site.price.label}, once. There's no subscription, and because dictation runs on your Mac, there are no word limits or minutes to count.`,
+    answer: `Choose ${licensePlans.map((plan) => `${plan.name} for ${plan.label}`).join(", ")}, paid once. Each plan includes one license key, with no subscription or dictation limits.`,
   },
   {
     question: "Can I get a refund?",
-    answer: `Yes. If LocalBolo isn't right for you, email us within ${site.refundDays} days of buying it for a full refund, no questions asked.`,
+    answer: `For purchases on this website, email us within ${site.refundDays} days for a full refund, no questions asked. AppSumo purchases follow the refund terms on your AppSumo order.`,
   },
   {
     question: "How do I install it after buying?",
-    answer: `Download LocalBolo from the link after checkout, or any time at ${site.domain}${site.downloadUrl}. Open it and enter the license key from the email Dodo Payments sends you. You only do that once per Mac.`,
+    answer: `Download LocalBolo from the link after checkout, or any time at ${site.domain}${site.downloadUrl}. Open it and enter the key from your Dodo Payments email or LocalBolo's AppSumo activation page. You only do that once per Mac.`,
   },
   {
     question: "Can I use it on more than one Mac?",
-    answer: `Yes. One license works on up to ${site.macsPerLicense} of your Macs at a time. To move it to a new Mac, deactivate the old one in LocalBolo's Settings › License. If that Mac is lost or broken, email us and we'll free it up.`,
+    answer: "Yes, choose the 2-Mac or 5-Mac plan and use the same key on those Macs. To move an activation, deactivate the old Mac in Settings › License. AppSumo buyers can also remove a Mac from their license page. Existing keys keep the activation limit they were sold with.",
   },
   {
     question: "I lost my license key. How do I find it?",
-    answer: `Go to ${site.domain}${site.findLicenseUrl} and enter the email you bought LocalBolo with. You'll get a sign-in link to a page that shows your key.`,
+    answer: `For AppSumo purchases, open LocalBolo in AppSumo My Products and choose Activate to reopen your license page. For direct purchases, go to ${site.domain}${site.findLicenseUrl} and enter the email you bought with to get a sign-in link that shows your key.`,
   },
   {
     question: "Does it update itself?",

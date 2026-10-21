@@ -1,5 +1,3 @@
-import { site } from "@/lib/site";
-
 /**
  * Every release of the Mac app, newest first, written for the people who use
  * it. The website's changelog and the app's update window both show these, so
@@ -29,7 +27,7 @@ export const releases: { version: string; date: string; changes: string[] }[] = 
     date: "September 30, 2026",
     changes: [
       "LocalBolo asks for your license key the first time it opens, then walks you through permissions.",
-      `Each key works on up to ${site.macsPerLicense} Macs. Settings › License shows your key and frees this Mac for another one.`,
+      "Each key works on up to 2 Macs. Settings › License shows your key and frees this Mac for another one.",
       "LocalBolo now updates itself. It checks for new versions once a day, and Check for Updates… is in the menu bar. If you have 0.1, download 0.2 once; it takes care of updates from then on.",
       "A new app icon and menu bar icon.",
     ],

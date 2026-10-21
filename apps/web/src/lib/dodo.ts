@@ -10,9 +10,6 @@ import DodoPayments from "dodopayments";
 const environment =
   process.env.DODO_PAYMENTS_ENVIRONMENT === "live_mode" ? "live_mode" : "test_mode";
 
-/** The Dodo product that is LocalBolo for Mac. */
-export const dodoProductId = process.env.DODO_PAYMENTS_PRODUCT_ID;
-
 /**
  * A Dodo Payments client, or null when the API key isn't set. Create one per
  * request, so the site still builds without the secrets.

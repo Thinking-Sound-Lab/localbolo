@@ -9,6 +9,9 @@
 	<!-- Dodo Payments' license API, which activates and validates license keys. -->
 	<key>LicenseServerURL</key>
 	<string>$(LICENSE_SERVER_URL)</string>
+	<!-- AppSumo-backed LocalBolo activation keys use the website's public API. -->
+	<key>AppSumoLicenseServerURL</key>
+	<string>$(APPSUMO_LICENSE_SERVER_URL)</string>
 	<!-- The website the app links to: Buy, Lost your key? and Support. -->
 	<key>WebsiteURL</key>
 	<string>$(WEBSITE_URL)</string>

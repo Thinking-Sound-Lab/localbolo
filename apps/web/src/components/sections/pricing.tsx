@@ -4,13 +4,13 @@ import { PixelArt } from "@/components/pixel-art";
 import { SectionHeading } from "@/components/sections/section-heading";
 import { pixelIcons } from "@/lib/pixel-icons";
 import { site } from "@/lib/site";
+import { licensePlans } from "@/lib/pricing";
 
 const included = [
-  `Use it on up to ${site.macsPerLicense} of your Macs`,
   "Unlimited dictation in every app",
   "Every speech model: Parakeet and Whisper",
   "On-device transcript cleanup",
-  "Works offline after setup",
+  "Offline dictation between license checks",
   "No account, no subscription",
 ];
 
@@ -23,33 +23,41 @@ export function Pricing() {
           meter.
         </SectionHeading>
 
-        <div className="mt-14 grid bg-blue text-white pixel-grid [--pixel-color:rgb(255_255_255/0.2)] md:grid-cols-2">
-          <div className="flex flex-col p-8 sm:p-12">
-            <p className="font-mono text-xs tracking-[0.14em] text-white/75 uppercase">
-              {site.name} for Mac
-            </p>
-            <p className="mt-8 font-pixel text-[7.5rem] leading-[0.8] tracking-[-0.04em] sm:text-[10rem]">
-              {site.price.label}
-            </p>
-            <p className="mt-6 font-mono text-xs tracking-wide text-white/75">
-              One-time purchase · {site.price.currency}
-            </p>
-            <div className="mt-auto pt-12">
-              <BuyButton tone="white" />
-              <p className="mt-4 font-mono text-xs tracking-wide text-white/75">
-                Secure checkout by Dodo Payments · {site.requirements}
-              </p>
-            </div>
-          </div>
-
-          <ul className="flex flex-col justify-center gap-5 border-t border-white/20 p-8 sm:p-12 md:border-t-0 md:border-l">
-            {included.map((item) => (
-              <li key={item} className="flex items-center gap-4 text-lg">
-                <PixelArt art={pixelIcons.check} className="size-[14px] shrink-0 text-white" />
-                {item}
-              </li>
+        <div className="mt-14 bg-blue text-white pixel-grid [--pixel-color:rgb(255_255_255/0.2)]">
+          <div className="grid divide-y divide-white/25 md:grid-cols-3 md:divide-x md:divide-y-0">
+            {licensePlans.map((plan) => (
+              <div key={plan.id} className="flex flex-col p-8 sm:p-10 md:px-8">
+                <h3 className="text-2xl font-medium tracking-tight">{plan.name}</h3>
+                <p className="mt-3 text-white/85">
+                  One license key for {plan.name}
+                </p>
+                <p className="mt-8 text-lg text-white/80">
+                  <span className="sr-only">Original price </span><del>{plan.originalLabel}</del>
+                </p>
+                <p className="mt-2 font-pixel text-7xl leading-none tracking-[-0.04em] sm:text-8xl md:text-7xl lg:text-8xl xl:text-[7.5rem]">
+                  <span className="sr-only">Current price </span>
+                  {plan.label}
+                </p>
+                <p className="mt-4 text-sm text-white/85">One-time purchase in {site.price.currency}</p>
+                <div className="mt-9"><BuyButton plan={plan} tone="white" /></div>
+              </div>
             ))}
-          </ul>
+          </div>
+          <div className="border-t border-white/25 p-8 sm:p-10">
+            <p className="text-xl font-medium">Every license includes</p>
+            <ul className="mt-6 grid gap-5 md:grid-cols-2">
+              {included.map((item) => (
+                <li key={item} className="flex items-center gap-4 text-lg">
+                  <PixelArt art={pixelIcons.check} className="size-[14px] shrink-0 text-white" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-sm text-white/85">
+              One key per plan, with 1, 2, or 5 Mac activations. Deactivate a Mac in Settings to move an activation.
+              Secure checkout by Dodo Payments. {site.requirements}.
+            </p>
+          </div>
         </div>
 
         <p className="mt-5 text-sm text-ink-faint">

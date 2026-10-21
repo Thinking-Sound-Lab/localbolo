@@ -1,5 +1,6 @@
 import { faq } from "@/lib/faq";
 import { site } from "@/lib/site";
+import { licensePlans, purchaseUrl } from "@/lib/pricing";
 
 /**
  * schema.org data for the home page, published as JSON-LD: who makes
@@ -45,13 +46,14 @@ export function homePageStructuredData() {
           "Parakeet and Whisper speech models",
         ],
         publisher: organization,
-        offers: {
+        offers: licensePlans.map((plan) => ({
           "@type": "Offer",
-          price: site.price.amount.toFixed(2),
+          name: `One license key for ${plan.name}`,
+          price: plan.price.toFixed(2),
           priceCurrency: site.price.currency,
-          url: `${site.url}/#pricing`,
+          url: `${site.url}${purchaseUrl(plan)}`,
           availability: "https://schema.org/InStock",
-        },
+        })),
       },
       {
         "@type": "FAQPage",

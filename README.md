@@ -351,8 +351,9 @@ scripts/generate-sparkle-keys.sh --export | gh secret set SPARKLE_PRIVATE_KEY --
 ### Licensing
 
 The app asks for a license key the first time it opens. Keys come from Dodo Payments, which
-enforces how many Macs each key can be active on at once (2, set on the product's License Key
-entitlement and shown on the website from `macsPerLicense` in `apps/web/src/lib/site.ts`).
+enforces how many Macs each key can be active on at once. New plans include one key for 1, 2,
+or 5 Macs, set on each product's License Key entitlement and listed in
+`apps/web/src/lib/pricing.ts`. Existing keys retain their original activation limits.
 
 - **One activation per Mac.** Each activation records an anonymous ID for the Mac, a hash of its
   hardware UUID ([`MachineIdentity`](apps/mac/LocalBolo/License/MachineIdentity.swift)).

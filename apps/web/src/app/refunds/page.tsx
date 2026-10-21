@@ -12,6 +12,11 @@ const email = <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>;
 
 const sections: DocSection[] = [
   {
+    id: "appsumo",
+    title: "AppSumo purchases",
+    content: <p>If you bought LocalBolo on AppSumo, request your refund through AppSumo My Products under the refund terms shown on your order. The policy below applies to purchases made on this website.</p>,
+  },
+  {
     id: "guarantee",
     title: `${site.refundDays} days, no questions asked`,
     content: (
@@ -69,8 +74,8 @@ export default function RefundsPage() {
     <DocPage
       eyebrow="Refund policy"
       title="Try it without the risk."
-      intro={`Every purchase of ${site.name} comes with a ${site.refundDays}-day refund.`}
-      updated="September 28, 2026"
+      intro={`Purchases on this website come with a ${site.refundDays}-day refund. AppSumo purchases follow the terms on your AppSumo order.`}
+      updated="October 21, 2026"
       sections={sections}
     />
   );

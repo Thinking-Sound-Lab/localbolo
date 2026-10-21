@@ -87,7 +87,7 @@ export default async function PurchasePage({ searchParams }: PageProps<"/purchas
               <ol className="mt-8 border border-line bg-white">
                 {[
                   "Drag LocalBolo to your Applications folder and open it.",
-                  "Enter the license key from the Dodo Payments email. You only do this once.",
+                  "Use the key from the Dodo Payments email on each Mac included in your plan.",
                   "Follow the rest of the setup guide, then hold fn and start talking.",
                 ].map((step, index) => (
                   <li key={step} className="flex gap-4 border-line p-5 not-first:border-t">

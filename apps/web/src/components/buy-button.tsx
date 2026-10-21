@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Monogram } from "@/components/logo";
 import { cx } from "@/lib/cx";
-import { site } from "@/lib/site";
+import { licensePlans, purchaseUrl, type LicensePlan } from "@/lib/pricing";
 
 const sizes = {
   sm: { button: "h-9", icon: "w-9", label: "px-3 text-[11px]" },
@@ -29,14 +29,17 @@ export function BuyButton({
   size = "lg",
   tone = "blue",
   className,
+  plan = licensePlans[0],
 }: {
   size?: keyof typeof sizes;
   tone?: keyof typeof tones;
   className?: string;
+  plan?: LicensePlan;
 }) {
   return (
     <a
-      href={site.purchaseUrl}
+      href={purchaseUrl(plan)}
+      aria-label={`Buy one license for ${plan.name} for ${plan.label}`}
       rel="nofollow"
       className={cx(
         "inline-flex items-stretch border font-mono tracking-[0.08em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
@@ -49,7 +52,7 @@ export function BuyButton({
         <Monogram className={size === "sm" ? "h-3.5" : "h-[18px]"} />
       </span>
       <span className={cx("flex items-center whitespace-nowrap", sizes[size].label)}>
-        Buy for {site.price.label}
+        Buy for {plan.label}
       </span>
     </a>
   );

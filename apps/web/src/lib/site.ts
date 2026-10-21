@@ -1,3 +1,5 @@
+import { licensePlans } from "./pricing.ts";
+
 /** Base URL for absolute links such as link previews. Set per environment in .env.development / .env.production. */
 const url = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -19,14 +21,12 @@ export const site = {
   /** The newest version of the Mac app (app/download). It asks for a license key before it works. */
   downloadUrl: "/download",
   price: {
-    amount: 49,
+    amount: licensePlans[0].price,
     currency: "USD",
-    label: "$49",
+    label: licensePlans[0].label,
   },
   /** How long after buying a customer can ask for a full refund. */
   refundDays: 7,
-  /** How many Macs one license key can be active on at a time. Keep in step with the activation limit in Dodo. */
-  macsPerLicense: 2,
   /** Where buyers look up a lost license key (app/license: Dodo's customer portal). */
   findLicenseUrl: "/license",
   requirements: "macOS 15 or later · Apple Silicon",
@@ -48,7 +48,7 @@ export const footerLinks = [
     title: "Support",
     links: [
       { label: "Help & contact", href: "/support" },
-      { label: "Find my license key", href: "/license", prefetch: false },
+      { label: "Find my license key", href: "/support#lost-key", prefetch: false },
       { label: "System requirements", href: "/support#requirements" },
       { label: "FAQ", href: "/#faq" },
       { label: "Changelog", href: "/changelog" },
