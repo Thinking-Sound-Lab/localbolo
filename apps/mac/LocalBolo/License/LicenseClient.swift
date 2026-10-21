@@ -1,12 +1,14 @@
+import CryptoKit
 import Foundation
 
-/// Dodo Payments' license API. Activating, validating and deactivating a key
-/// are public endpoints, so the app calls them without any secret.
+/// Direct purchases use Dodo's public API; AppSumo purchases use our license
+/// server. No payment or AppSumo API secret is included in the app.
 nonisolated struct LicenseClient: Sendable {
     /// Sends a request and returns the response. Replaced in tests.
     typealias Transport = @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
     let baseURL: URL
+    var appSumoBaseURL: URL? = nil
     var transport: Transport = { try await URLSession.shared.data(for: $0) }
 
     /// The client for the server in the app's Info.plist: Dodo's test mode in
@@ -15,14 +17,30 @@ nonisolated struct LicenseClient: Sendable {
         guard let value = Bundle.main.object(forInfoDictionaryKey: "LicenseServerURL") as? String,
               !value.isEmpty, let url = URL(string: value)
         else { return nil }
-        return LicenseClient(baseURL: url)
+        let appSumoValue = Bundle.main.object(forInfoDictionaryKey: "AppSumoLicenseServerURL") as? String
+        let appSumoURL = appSumoValue.flatMap { $0.isEmpty ? nil : URL(string: $0) }
+        return LicenseClient(baseURL: url, appSumoBaseURL: appSumoURL)
     }
 
-    /// Activates `key` on this Mac and returns the activation's ID (`lki_…`).
-    func activate(key: String, deviceName: String) async throws(LicenseError) -> String {
-        struct Request: Encodable { let licenseKey: String; let name: String }
+    static func isAppSumoKey(_ key: String) -> Bool {
+        key.uppercased().hasPrefix("LB-AS-")
+    }
+
+    /// Activates `key` on this Mac and returns the provider's activation ID.
+    func activate(key: String, deviceName: String, deviceID: String? = nil) async throws(LicenseError) -> String {
+        struct Request: Encodable { let licenseKey: String; let name: String; let deviceId: String? }
         struct Response: Decodable { let id: String }
-        let data = try await post("licenses/activate", Request(licenseKey: key, name: deviceName))
+        var appSumoDeviceID: String?
+        if Self.isAppSumoKey(key) {
+            guard let deviceID, !deviceID.isEmpty, deviceID != "unknown" else { throw .unexpectedResponse }
+            // Keep the existing on-disk machine ID compatible with older
+            // releases, and send a provider-specific hash to our server.
+            appSumoDeviceID = SHA256.hash(data: Data("LocalBolo AppSumo device \(deviceID)".utf8))
+                .map { String(format: "%02x", $0) }.joined()
+        }
+        let data = try await post("licenses/activate", key: key, Request(
+            licenseKey: key, name: deviceName, deviceId: appSumoDeviceID
+        ))
         guard let response = try? decoder.decode(Response.self, from: data) else { throw .unexpectedResponse }
         return response.id
     }
@@ -31,7 +49,7 @@ nonisolated struct LicenseClient: Sendable {
     func validate(key: String, instanceID: String) async throws(LicenseError) -> Bool {
         struct Request: Encodable { let licenseKey: String; let licenseKeyInstanceId: String }
         struct Response: Decodable { let valid: Bool }
-        let data = try await post("licenses/validate", Request(licenseKey: key, licenseKeyInstanceId: instanceID))
+        let data = try await post("licenses/validate", key: key, Request(licenseKey: key, licenseKeyInstanceId: instanceID))
         guard let response = try? decoder.decode(Response.self, from: data) else { throw .unexpectedResponse }
         return response.valid
     }
@@ -39,13 +57,20 @@ nonisolated struct LicenseClient: Sendable {
     /// Removes this Mac's activation, freeing it for another Mac.
     func deactivate(key: String, instanceID: String) async throws(LicenseError) {
         struct Request: Encodable { let licenseKey: String; let licenseKeyInstanceId: String }
-        _ = try await post("licenses/deactivate", Request(licenseKey: key, licenseKeyInstanceId: instanceID))
+        _ = try await post("licenses/deactivate", key: key, Request(licenseKey: key, licenseKeyInstanceId: instanceID))
     }
 
     private var decoder: JSONDecoder { JSONDecoder() }
 
-    private func post(_ path: String, _ body: some Encodable) async throws(LicenseError) -> Data {
-        var request = URLRequest(url: baseURL.appending(path: path), timeoutInterval: 20)
+    private func post(_ path: String, key: String, _ body: some Encodable) async throws(LicenseError) -> Data {
+        let server: URL
+        if Self.isAppSumoKey(key) {
+            guard let appSumoBaseURL else { throw .unexpectedResponse }
+            server = appSumoBaseURL
+        } else {
+            server = baseURL
+        }
+        var request = URLRequest(url: server.appending(path: path), timeoutInterval: 20)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let encoder = JSONEncoder()
@@ -78,7 +103,7 @@ nonisolated enum LicenseError: Error, Equatable {
     case inactive
     /// The key is already active on as many Macs as it allows.
     case activationLimitReached
-    /// The request didn't reach Dodo Payments.
+    /// The request didn't reach the license server.
     case offline
     case unexpectedResponse
 }
@@ -87,11 +112,11 @@ extension LicenseError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notFound:
-            "That license key wasn't found. Check it against the email from Dodo Payments."
+            "That license key wasn't found. Check your purchase email or AppSumo activation page."
         case .inactive:
             "That license key is no longer active."
         case .activationLimitReached:
-            "That key is already active on as many Macs as it allows. Deactivate it on another Mac in LocalBolo's Settings, then try again."
+            "That key is already active on as many Macs as it allows. Remove a Mac in LocalBolo's Settings or your AppSumo license page, then try again."
         case .offline:
             "Couldn't reach the license server. Check your internet connection and try again."
         case .unexpectedResponse:

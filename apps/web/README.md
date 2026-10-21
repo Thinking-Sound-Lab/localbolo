@@ -144,6 +144,11 @@ npx supabase db push
 
 ## Deploying
 
+AppSumo purchases use a separate licensing service, OAuth activation page and
+Mac-management flow. See [AppSumo licensing](docs/appsumo-licensing.md) for the
+migration, server credentials, URL validation, compatible Mac release and checks.
+The three-tier AppSumo deal does not need a redemption-code CSV.
+
 The site runs on [Vercel](https://vercel.com), in the `localbolo` project of the Thinking Sound
 Lab team, connected to this repository:
 

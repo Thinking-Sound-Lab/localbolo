@@ -45,11 +45,12 @@ the selected Mac limit. AppSumo manages its own license keys for this model, so 
 10,000-code CSV is **not required**. A single shared CSV pool cannot distinguish
 which one-key buyer should receive a 1-, 2-, or 5-Mac limit.
 
-Fulfillment remains a separate launch requirement: implement and connect the
-AppSumo licensing webhook and OAuth redirect, map each AppSumo tier to a Dodo key
-with the correct activation limit, and handle upgrades, downgrades, and revocation.
-An AppSumo-generated key will not activate the current Mac app directly. The
-listing must remain a draft until this connection passes AppSumo's licensing tests.
+The webhook, OAuth activation page, device management, and Mac client are implemented
+in this repository. AppSumo purchases use LocalBolo's own license service, with
+one stable activation key per buyer; they do not require Dodo key imports.
+Follow [AppSumo licensing setup](appsumo-licensing.md) to migrate, configure,
+deploy, release a compatible Mac build, and validate with AppSumo. The listing
+must remain a draft until that live connection and buyer flow are verified.
 
 ## Export a separate batch of 10,000 working Dodo keys
 

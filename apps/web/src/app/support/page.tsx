@@ -36,14 +36,16 @@ const sections: DocSection[] = [
         <p>
           <a href={site.downloadUrl}>Download the latest {site.name}</a>, drag it to your
           Applications folder and open it. The setup guide asks for your license key, which is in
-          the email from Dodo Payments you got after buying. You only enter it once per Mac.
+          the email from Dodo Payments you got after buying. AppSumo buyers get their key from
+          the <Link href="/appsumo">AppSumo activation page</Link>. You only enter it once per Mac.
         </p>
         <p>
           Each plan includes one license key for one, two, or five Macs, according to your purchase.
           Existing keys keep their original activation limit. Moving to a new Mac?
           Open Settings › License on the old one and choose Deactivate This Mac, then enter the
-          same key on the new one. If the old Mac is lost or broken, email {email} and we&apos;ll
-          free up its activation.
+          same key on the new one. AppSumo buyers can also remove a lost or broken Mac from
+          their <Link href="/appsumo">license page</Link>. For direct purchases, email {email}
+          and we&apos;ll free up its activation.
         </p>
       </>
     ),
@@ -52,8 +54,13 @@ const sections: DocSection[] = [
     id: "lost-key",
     title: "Lost your license key?",
     content: (
+      <>
       <p>
-        Go to{" "}
+        Bought on AppSumo? Open LocalBolo in AppSumo My Products and choose Activate to
+        return to your <Link href="/appsumo">license page</Link>. It shows your key and activated Macs.
+      </p>
+      <p>
+        Bought on this website? Go to{" "}
         <a href={site.findLicenseUrl}>
           {site.domain}
           {site.findLicenseUrl}
@@ -62,6 +69,7 @@ const sections: DocSection[] = [
         {site.name} with. You&apos;ll get a sign-in link to a page that shows your key. Still stuck?
         Email {email}.
       </p>
+      </>
     ),
   },
   {
@@ -96,7 +104,7 @@ const sections: DocSection[] = [
         </li>
         <li>
           <strong>An internet connection</strong> to activate your license and download a model.
-          After that, dictation works offline.
+          After that, dictation works offline for up to 30 days between license checks.
         </li>
       </ul>
     ),

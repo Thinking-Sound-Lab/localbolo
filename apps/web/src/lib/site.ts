@@ -48,7 +48,7 @@ export const footerLinks = [
     title: "Support",
     links: [
       { label: "Help & contact", href: "/support" },
-      { label: "Find my license key", href: "/license", prefetch: false },
+      { label: "Find my license key", href: "/support#lost-key", prefetch: false },
       { label: "System requirements", href: "/support#requirements" },
       { label: "FAQ", href: "/#faq" },
       { label: "Changelog", href: "/changelog" },

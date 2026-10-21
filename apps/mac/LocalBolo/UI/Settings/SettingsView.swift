@@ -127,8 +127,11 @@ private struct LicenseSettingsView: View {
                 }
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Your license key is in the email from Dodo Payments. Deactivating this Mac frees it up to use on another one. LocalBolo checks the key every two weeks, and needs to reach Dodo at least once a month.")
+                    Text("Your license key is in your purchase email or LocalBolo's AppSumo activation page. Deactivating this Mac frees a slot for another one. LocalBolo checks the key every two weeks and needs an internet connection at least once a month.")
                     Link("Lost your key?", destination: AppLinks.findLicense)
+                    if let key = app.license.activation?.licenseKey, LicenseClient.isAppSumoKey(key) {
+                        Link("Manage your Macs", destination: AppLinks.appSumo)
+                    }
                 }
                 .foregroundStyle(.secondary)
             }

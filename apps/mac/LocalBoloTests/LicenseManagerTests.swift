@@ -24,11 +24,63 @@ struct LicenseManagerTests {
         let body = try #require(server.requests.first?.httpBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
         #expect(json["license_key"] == "LB-1234-ABCD")
+        #expect(Set(json.keys) == ["license_key", "name"])
         // The Mac's name, plus its anonymous ID so Macs with the same name can be told apart.
         #expect(json["name"]?.hasSuffix(" · \(thisMac.prefix(8))") == true)
 
         // A fresh launch picks the activation up again.
         #expect(makeManager(server).isLicensed)
+    }
+
+    @Test func appSumoKeyUsesItsOwnServerAndSurvivesRelaunch() async throws {
+        let key = "LB-AS-" + String(repeating: "A", count: 64)
+        let instance = "11111111-1111-4111-8111-111111111111"
+        let server = FakeLicenseServer([
+            "api/licenses/activate": .init(status: 201, body: "{\"id\":\"\(instance)\"}"),
+            "api/licenses/validate": .init(status: 200, body: #"{"valid":true}"#),
+            "api/licenses/deactivate": .init(status: 200, body: "{}"),
+        ])
+        var client = server.client
+        client.appSumoBaseURL = URL(string: "https://appsumo-license.example/api")!
+        let license = LicenseManager(client: client, defaults: defaults, now: { today }, machineID: thisMac)
+        await license.activate(key: " \(key.lowercased())\n")
+        #expect(license.isLicensed)
+        #expect(license.activation?.licenseKey == key)
+        let body = try #require(server.requests.first?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
+        #expect(json["device_id"]?.count == 64)
+        #expect(json["device_id"] != thisMac)
+        #expect(json["license_key"] == key)
+
+        let later = today.addingTimeInterval(15 * day)
+        let relaunched = LicenseManager(client: client, defaults: defaults, now: { later }, machineID: thisMac)
+        await relaunched.revalidateIfDue()
+        #expect(relaunched.isLicensed)
+        await relaunched.deactivate()
+        #expect(relaunched.status == .notActivated)
+        #expect(server.requests.map { $0.url!.host! } == Array(repeating: "appsumo-license.example", count: 3))
+        #expect(server.requests.map { $0.url!.path } == ["/api/licenses/activate", "/api/licenses/validate", "/api/licenses/deactivate"])
+    }
+
+    @Test func missingAppSumoConfigurationDoesNotSendTheKeyToDodo() async {
+        let server = FakeLicenseServer()
+        let license = makeManager(server)
+        await license.activate(key: "LB-AS-" + String(repeating: "A", count: 64))
+        #expect(license.status == .notActivated)
+        #expect(license.errorMessage == LicenseError.unexpectedResponse.errorDescription)
+        #expect(server.requests.isEmpty)
+    }
+
+    @Test func exportedDodoCodesKeepUsingDodo() async throws {
+        let server = FakeLicenseServer(["licenses/activate": .init(status: 201, body: #"{"id":"lki_csv"}"#)])
+        var client = server.client
+        client.appSumoBaseURL = URL(string: "https://appsumo-license.example/api")!
+        let id = try await client.activate(key: "LBAS-imported-dodo-code", deviceName: "Mac", deviceID: thisMac)
+        #expect(id == "lki_csv")
+        #expect(server.requests.first?.url?.host == "licenses.example")
+        let body = try #require(server.requests.first?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
+        #expect(json["device_id"] == nil)
     }
 
     @Test(arguments: [
