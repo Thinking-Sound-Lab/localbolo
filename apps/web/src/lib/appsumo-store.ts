@@ -10,7 +10,14 @@ export function appSumoDatabase(): SupabaseClient {
 }
 export async function appSumoRPC<T>(name: string, args: Record<string, unknown>, db = appSumoDatabase()): Promise<T> {
   const { data, error } = await db.rpc(name, args);
-  if (error) throw new AppSumoError(503);
+  if (error) {
+    // Messages, details, arguments and payloads can contain buyer credentials.
+    console.error("AppSumo database request failed", {
+      operation: /^appsumo_[a-z_]{1,64}$/.test(name) ? name : "unknown",
+      code: /^(?:[A-Z0-9]{5}|PGRST\d{3})$/.test(error.code) ? error.code : "unknown",
+    });
+    throw new AppSumoError(503);
+  }
   return data as T;
 }
 export async function appSumoProfile(id: string) {

@@ -1,5 +1,4 @@
-import { appSumoForm, appSumoRedirect, clearAppSumoCookie } from "@/lib/appsumo-forms";
-import { appSumoFailure } from "@/lib/appsumo-handlers";
+import { appSumoForm, appSumoFormFailure, appSumoRedirect, clearAppSumoCookie } from "@/lib/appsumo-forms";
 
 export async function POST(request: Request) {
   try {
@@ -7,5 +6,5 @@ export async function POST(request: Request) {
     const response = appSumoRedirect();
     clearAppSumoCookie(response, "session");
     return response;
-  } catch (error) { return appSumoFailure(error); }
+  } catch (error) { return appSumoFormFailure(error, "session"); }
 }

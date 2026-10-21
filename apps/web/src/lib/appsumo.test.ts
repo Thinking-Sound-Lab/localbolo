@@ -57,6 +57,12 @@ test("buyer forms require both a same-origin POST and the cookie nonce", () => {
   checkAppSumoForm(request, new URLSearchParams({ csrf: "nonce" }), { nonce: "nonce" });
   assert.throws(() => checkAppSumoForm(request, new URLSearchParams({ csrf: "other" }), { nonce: "nonce" }), AppSumoError);
   assert.throws(() => checkAppSumoForm(new Request("https://localbolo.example/appsumo/claim", { headers: { origin: "https://attacker.example" } }), new URLSearchParams({ csrf: "nonce" }), { nonce: "nonce" }), AppSumoError);
+  assert.throws(() => checkAppSumoForm(request, new URLSearchParams({ csrf: "old-nonce" }), null),
+    (error: unknown) => error instanceof AppSumoError && error.status === 401 && error.reason === "expired");
+  assert.throws(() => checkAppSumoForm(request, new URLSearchParams({ csrf: "wrong-nonce" }), { nonce: "nonce" }),
+    (error: unknown) => error instanceof AppSumoError && error.status === 403 && error.reason === "invalid");
+  assert.throws(() => checkAppSumoForm(new Request("https://localbolo.example/appsumo/claim"), new URLSearchParams(), null),
+    (error: unknown) => error instanceof AppSumoError && error.status === 403);
 });
 test("events accept purchase/refund without a tier; tier changes require a previous key", () => {
   assert.equal(parseAppSumoEvent({ event: "purchase", license_key: key }).event, "purchase");

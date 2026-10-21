@@ -3,8 +3,7 @@ import {
   AppSumoError, appSumoCookieOptions, appSumoCookies, appSumoRateBucket, exchangeAppSumoCode,
   getAppSumoLicense, sealAppSumoCookie, type AppSumoProfile,
 } from "@/lib/appsumo";
-import { appSumoForm, appSumoRedirect, clearAppSumoCookie } from "@/lib/appsumo-forms";
-import { appSumoFailure } from "@/lib/appsumo-handlers";
+import { appSumoForm, appSumoFormFailure, appSumoRedirect, clearAppSumoCookie } from "@/lib/appsumo-forms";
 import { appSumoRateLimit, appSumoRPC } from "@/lib/appsumo-store";
 
 export const runtime = "nodejs";
@@ -27,7 +26,7 @@ export async function POST(request: Request) {
     clearAppSumoCookie(response, "pending");
     return response;
   } catch (error) {
-    if (!confirmed) return appSumoFailure(error);
+    if (!confirmed) return appSumoFormFailure(error, "pending");
     const response = appSumoRedirect(error instanceof AppSumoError ? error.reason : "unavailable");
     clearAppSumoCookie(response, "pending");
     return response;

@@ -4,6 +4,7 @@ import {
   AppSumoError, appSumoCookieOptions, appSumoCookies, appSumoHeaders, appSumoRedirectURI,
   checkAppSumoForm, openAppSumoCookie, readSmallBody,
 } from "./appsumo.ts";
+import { appSumoFailure } from "./appsumo-handlers.ts";
 
 export function appSumoRedirect(error?: string) {
   const url = new URL("/appsumo", appSumoRedirectURI());
@@ -22,4 +23,12 @@ export async function appSumoForm(request: Request, purpose: "session" | "pendin
 }
 export function clearAppSumoCookie(response: NextResponse, purpose: "pending" | "session") {
   response.cookies.set(appSumoCookies[purpose], "", appSumoCookieOptions(0));
+}
+export function appSumoFormFailure(error: unknown, purpose: "pending" | "session") {
+  if (error instanceof AppSumoError && error.status === 401 && error.reason === "expired") {
+    const response = appSumoRedirect("expired");
+    clearAppSumoCookie(response, purpose);
+    return response;
+  }
+  return appSumoFailure(error);
 }

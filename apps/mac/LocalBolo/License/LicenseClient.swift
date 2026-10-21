@@ -39,10 +39,26 @@ nonisolated struct LicenseClient: Sendable {
                 .map { String(format: "%02x", $0) }.joined()
         }
         let data = try await post("licenses/activate", key: key, Request(
-            licenseKey: key, name: deviceName, deviceId: appSumoDeviceID
+            licenseKey: key, name: Self.isAppSumoKey(key) ? Self.appSumoDeviceName(deviceName) : deviceName,
+            deviceId: appSumoDeviceID
         ))
         guard let response = try? decoder.decode(Response.self, from: data) else { throw .unexpectedResponse }
         return response.id
+    }
+
+    private static func appSumoDeviceName(_ name: String) -> String {
+        let clean = String(name.unicodeScalars.filter { $0.value >= 32 && $0.value != 127 })
+        var result = ""
+        var length = 0
+        // The endpoint counts UTF-16 units, as JavaScript String.length does.
+        // Keep complete characters, including emoji and combining sequences.
+        for character in clean {
+            let units = String(character).utf16.count
+            guard length + units <= 120 else { break }
+            result.append(character)
+            length += units
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Mac" : result
     }
 
     /// Whether `key` is still active and this Mac's activation still exists.

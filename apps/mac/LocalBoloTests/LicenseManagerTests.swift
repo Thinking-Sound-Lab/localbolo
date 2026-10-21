@@ -84,6 +84,40 @@ struct LicenseManagerTests {
     }
 
     @Test(arguments: [
+        String(repeating: "a", count: 200),
+        String(repeating: "👩🏽‍💻", count: 30),
+        "My\u{00} Mac\n\u{7F}",
+        "\u{00}\n  ",
+    ])
+    func appSumoNamesFitTheEndpointWithoutChangingDeviceIdentity(name: String) async throws {
+        let server = FakeLicenseServer(["api/licenses/activate": .init(status: 201, body: #"{"id":"instance"}"#)])
+        var client = server.client
+        client.appSumoBaseURL = URL(string: "https://appsumo-license.example/api")!
+        let key = "LB-AS-" + String(repeating: "A", count: 64)
+        _ = try await client.activate(key: key, deviceName: name, deviceID: thisMac)
+        _ = try await client.activate(key: key, deviceName: "Renamed Mac", deviceID: thisMac)
+        let json = try server.requests.map { request in
+            let body = try #require(request.httpBody)
+            return try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
+        }
+        let sentName = try #require(json[0]["name"])
+        #expect(!sentName.isEmpty && sentName.utf16.count <= 120)
+        #expect(sentName.unicodeScalars.allSatisfy { $0.value >= 32 && $0.value != 127 })
+        #expect(json[0]["device_id"] == json[1]["device_id"])
+        if name == "\u{00}\n  " { #expect(sentName == "Mac") }
+        if name.first == "👩🏽‍💻" { #expect(sentName.allSatisfy { $0 == "👩🏽‍💻" }) }
+    }
+
+    @Test func directDodoDeviceNamesAreUnchanged() async throws {
+        let server = FakeLicenseServer(["licenses/activate": .init(status: 201, body: #"{"id":"instance"}"#)])
+        let name = String(repeating: "a", count: 200) + "\n"
+        _ = try await server.client.activate(key: "LB-direct-key", deviceName: name)
+        let body = try #require(server.requests.first?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
+        #expect(json["name"] == name)
+    }
+
+    @Test(arguments: [
         (404, LicenseError.notFound),
         (403, LicenseError.inactive),
         (422, LicenseError.activationLimitReached),

@@ -44,7 +44,7 @@ create table public.appsumo_events (
 );
 create table public.appsumo_rate_limits (
   bucket text primary key,
-  requests integer not null,
+  hits timestamptz[] not null default '{}',
   expires_at timestamptz not null
 );
 create index appsumo_keys_license_idx on public.appsumo_keys(license_id);
@@ -111,6 +111,12 @@ begin
       select current_key into other_current from appsumo_licenses where id = other_id;
       -- Keep the original buyer's product key. Any already-exposed placeholder
       -- key remains an alias to the same license and shares its activation cap.
+      -- For the same Mac, retain its active instance (the newest if both are
+      -- active). An inactive original must not discard a working successor.
+      delete from appsumo_activations a where a.license_id = owner_id and exists (
+        select 1 from appsumo_activations b where b.license_id = other_id and b.device_id = a.device_id
+          and b.active and (not a.active or (b.created_at, b.id) > (a.created_at, a.id))
+      );
       delete from appsumo_activations a where a.license_id = other_id and exists (
         select 1 from appsumo_activations b where b.license_id = owner_id and b.device_id = a.device_id
       );
@@ -235,14 +241,27 @@ end $$;
 
 create function public.appsumo_rate_limit(p_bucket text, p_limit integer, p_seconds integer default 60)
 returns boolean language plpgsql set search_path = public, pg_temp as $$
-declare hits integer;
+declare recent timestamptz[]; checked_at timestamptz;
 begin
-  delete from appsumo_rate_limits where expires_at < now();
-  insert into appsumo_rate_limits(bucket, requests, expires_at)
-    values (p_bucket, 1, now() + make_interval(secs => p_seconds))
-    on conflict (bucket) do update set requests = appsumo_rate_limits.requests + 1
-    returning requests into hits;
-  return hits <= p_limit;
+  if p_limit not between 1 and 1000 or p_seconds not between 1 and 3600 then
+    raise exception 'Invalid rate limit';
+  end if;
+  insert into appsumo_rate_limits(bucket, expires_at) values (p_bucket, clock_timestamp()) on conflict do nothing;
+  select hits into recent from appsumo_rate_limits where bucket = p_bucket for update;
+  -- Read the clock after acquiring the row lock so waiting requests share a
+  -- true rolling window, rather than getting another quota at a fixed boundary.
+  checked_at := clock_timestamp();
+  select coalesce(array_agg(hit), '{}') into recent from unnest(recent) hit
+    where hit > checked_at - make_interval(secs => p_seconds);
+  if cardinality(recent) >= p_limit then return false; end if;
+  update appsumo_rate_limits set hits = array_append(recent, checked_at),
+    expires_at = checked_at + make_interval(secs => p_seconds) where bucket = p_bucket;
+  -- Lock this bucket first, then clean others without waiting on their locks.
+  delete from appsumo_rate_limits where bucket in (
+    select bucket from appsumo_rate_limits where expires_at < checked_at and bucket <> p_bucket
+    limit 100 for update skip locked
+  );
+  return true;
 end $$;
 
 do $$ declare item record; begin

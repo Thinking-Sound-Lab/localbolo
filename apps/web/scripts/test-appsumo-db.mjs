@@ -9,8 +9,10 @@ const exec = promisify(execFile);
 const container = `localbolo-licensing-test-${randomUUID().slice(0, 8)}`;
 const sql = (input) => execFileSync("docker", ["exec", "-i", container, "psql", "-U", "postgres", "-Atq", "-v", "ON_ERROR_STOP=1"], { input, encoding: "utf8" }).trim();
 const parallelSQL = async (query) => (await exec("docker", ["exec", container, "psql", "-U", "postgres", "-Atq", "-v", "ON_ERROR_STOP=1", "-c", query])).stdout.trim();
+let started = false;
 try {
   execFileSync("docker", ["run", "--rm", "-d", "--name", container, "-e", "POSTGRES_PASSWORD=disposable-local-test", "postgres:17-alpine"], { stdio: "ignore" });
+  started = true;
   for (let attempt = 0; ; attempt++) {
     try { execFileSync("docker", ["exec", container, "pg_isready", "-U", "postgres"], { stdio: "ignore" }); break; }
     catch { if (attempt >= 60) throw Error("Test database did not start"); await new Promise((resolve) => setTimeout(resolve, 500)); }
@@ -31,6 +33,11 @@ try {
     sql(`select appsumo_apply_event('{"event":"deactivate","license_key":"${key}"}');`);
   }
   console.log("Concurrent activation races passed for all three tiers.");
+  const rateAttempts = await Promise.all(Array.from({ length: 40 }, () => parallelSQL(
+    "set role service_role; select appsumo_rate_limit('appsumo-api-race',18);"
+  )));
+  assert.equal(rateAttempts.filter((allowed) => allowed === "t").length, 18);
+  console.log("Concurrent rolling rate limit allows exactly 18 requests.");
 } finally {
-  execFileSync("docker", ["rm", "-f", container], { stdio: "ignore" });
+  if (started) execFileSync("docker", ["rm", "-f", container], { stdio: "ignore" });
 }

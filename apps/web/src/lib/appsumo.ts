@@ -91,7 +91,9 @@ export function appSumoCookieOptions(seconds: number) {
   return { httpOnly: true, secure: appSumoRedirectURI().protocol === "https:", sameSite: "lax" as const, path: "/appsumo", maxAge: seconds };
 }
 export function checkAppSumoForm(request: Request, form: URLSearchParams, state: Record<string, unknown> | null) {
-  if (request.headers.get("origin") !== appSumoRedirectURI().origin || !state || typeof state.nonce !== "string" || form.get("csrf") !== state.nonce) throw new AppSumoError(403, "expired");
+  if (request.headers.get("origin") !== appSumoRedirectURI().origin) throw new AppSumoError(403, "invalid");
+  if (!state || typeof state.nonce !== "string") throw new AppSumoError(401, "expired");
+  if (form.get("csrf") !== state.nonce) throw new AppSumoError(403, "invalid");
 }
 export const appSumoHeaders = { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow" };
 

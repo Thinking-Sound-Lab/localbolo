@@ -100,6 +100,48 @@ begin
   perform pg_temp.check_ok(appsumo_rate_limit('fixture',2) and appsumo_rate_limit('fixture',2) and not appsumo_rate_limit('fixture',2), 'rate limits are enforced');
 end $$;
 
+-- A delayed history merge must preserve the instance still saved by the Mac.
+do $$
+declare
+  original_active boolean; successor_active boolean; successor_newer boolean;
+  a uuid; b uuid; owner_id uuid; successor_id uuid;
+  original_key text; successor_key text; old_instance uuid; new_instance uuid; kept uuid;
+begin
+  for original_active, successor_active, successor_newer in values
+    (false, true, true), (true, false, true), (true, true, true), (true, true, false)
+  loop
+    a := gen_random_uuid(); b := gen_random_uuid();
+    perform appsumo_apply_event(jsonb_build_object('event','activate','license_key',a,'tier',3));
+    perform appsumo_apply_event(jsonb_build_object('event','activate','license_key',b,'tier',3));
+    original_key := appsumo_claim(a)->>'product_key'; successor_key := appsumo_claim(b)->>'product_key';
+    owner_id := (appsumo_claim(a)->>'id')::uuid; successor_id := (appsumo_claim(b)->>'id')::uuid;
+    old_instance := (appsumo_license_action(original_key,'activate',null,repeat('d',64),'Original Mac')->>'id')::uuid;
+    new_instance := (appsumo_license_action(successor_key,'activate',null,repeat('d',64),'Successor Mac')->>'id')::uuid;
+    update appsumo_activations set active = original_active,
+      created_at = clock_timestamp() - case when successor_newer then interval '2 seconds' else interval '0 seconds' end
+      where id = old_instance;
+    update appsumo_activations set active = successor_active,
+      created_at = clock_timestamp() - case when successor_newer then interval '0 seconds' else interval '2 seconds' end
+      where id = new_instance;
+    kept := case when successor_active and (not original_active or successor_newer) then new_instance else old_instance end;
+    perform appsumo_apply_event(jsonb_build_object('event','upgrade','license_key',b,'prev_license_key',a,'tier',3));
+    perform pg_temp.check_ok((appsumo_license_action(original_key,'validate',kept)->>'valid')::boolean, 'history merge keeps the working instance');
+    perform pg_temp.check_ok((appsumo_license_action(successor_key,'validate',kept)->>'valid')::boolean, 'both product keys validate the surviving instance');
+    perform pg_temp.check_ok((select count(*) = 1 from appsumo_activations where license_id = owner_id and device_id = repeat('d',64)), 'history merge deduplicates the device');
+    perform pg_temp.check_ok(appsumo_profile(successor_id)->>'id' = owner_id::text, 'successor session follows original history');
+  end loop;
+end $$;
+
+-- Reproduce the fixed-window boundary without waiting a minute: one expired
+-- hit, followed by 17 hits just before a boundary, may allow only one more.
+insert into appsumo_rate_limits(bucket, hits, expires_at) values (
+  'appsumo-api', array[clock_timestamp() - interval '61 seconds'] || array_fill(clock_timestamp() - interval '2 seconds', array[17]),
+  clock_timestamp() + interval '58 seconds'
+);
+select pg_temp.check_ok(appsumo_rate_limit('appsumo-api',18), 'rolling budget permits its last slot');
+select pg_temp.check_ok(not appsumo_rate_limit('appsumo-api',18), 'rolling budget cannot burst at a fixed boundary');
+select pg_temp.check_ok((select cardinality(hits) = 18 from appsumo_rate_limits where bucket = 'appsumo-api'), 'denied requests do not grow timestamp storage');
+
 select pg_temp.check_ok(not has_table_privilege('anon', 'appsumo_licenses', 'select'), 'anon cannot read keys');
 select pg_temp.check_ok(not has_table_privilege('authenticated', 'appsumo_activations', 'select'), 'signed-in browser cannot read devices');
 select pg_temp.check_ok(not has_function_privilege('anon', 'appsumo_profile(uuid)', 'execute'), 'anon cannot call privileged RPC');
