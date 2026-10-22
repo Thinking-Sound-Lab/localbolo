@@ -118,12 +118,16 @@ nonisolated enum PolishedTextPolicy {
     }
 
     /// Sentence ends, not counting the period of an abbreviation like "p.m." or "Dr.".
+    ///
+    /// Only a Latin letter on its own is an initial. A Devanagari word such as
+    /// "दो" is also a single Swift character, and its period ends a sentence.
     private static func sentenceBoundaries(in text: Substring) -> [Range<String.Index>] {
         let abbreviations: Set<String> = ["mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc", "inc", "ltd"]
         return text.ranges(of: /[。！？!?।\n]|\.(?=\s|$)/).filter { range in
             guard text[range] == "." else { return true }
             let word = String(text[..<range.lowerBound].reversed().prefix { $0.isLetter }.reversed())
-            return word.isEmpty || word.count > 1 && !abbreviations.contains(word.lowercased())
+            let isInitial = word.count == 1 && word.unicodeScalars.allSatisfy(\.isASCII)
+            return !isInitial && !abbreviations.contains(word.lowercased())
         }
     }
 

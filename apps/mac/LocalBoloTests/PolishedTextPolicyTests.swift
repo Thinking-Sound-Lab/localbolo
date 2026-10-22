@@ -79,6 +79,8 @@ struct PolishedTextPolicyTests {
         // A correction doesn't take back an earlier, separate statement.
         ("3号送资料。9点，不对，10点开会", "10点开会。", "zh"),
         ("3号送资料。我们9点见。不对，10点见。", "我们10点见。", "zh"),
+        // "दो" is one Swift character, but its period still ends a sentence.
+        ("3 किताबें दो. 9 बजे मिलते हैं, नहीं, 10 बजे मिलते हैं", "10 बजे मिलते हैं।", "hi"),
     ])
     func rejectsCorrectionsThatLoseTheFinalVersion(original: String, edited: String, language: String) {
         #expect(!PolishedTextPolicy.accepts(edited, original: original, language: language))
