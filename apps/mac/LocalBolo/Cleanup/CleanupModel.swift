@@ -5,13 +5,23 @@
 nonisolated enum CleanupModel: String, LocalModel {
     case qwen25_1_5B = "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
     case qwen3_0_6B = "mlx-community/Qwen3-0.6B-4bit"
+    case qwen3_1_7B = "mlx-community/Qwen3-1.7B-4bit"
 
     static let recommended = CleanupModel.qwen25_1_5B
+
+    static func recommended(for style: CleanupStyle) -> CleanupModel {
+        style == .polished ? .qwen3_1_7B : .recommended
+    }
+
+    func supports(_ style: CleanupStyle) -> Bool {
+        style == .conservative || self == .qwen3_1_7B
+    }
 
     var displayName: String {
         switch self {
         case .qwen25_1_5B: "Qwen 2.5 1.5B"
         case .qwen3_0_6B: "Qwen 3 0.6B"
+        case .qwen3_1_7B: "Qwen 3 1.7B"
         }
     }
 
@@ -19,6 +29,7 @@ nonisolated enum CleanupModel: String, LocalModel {
         switch self {
         case .qwen25_1_5B: "Most reliable at applying your corrections."
         case .qwen3_0_6B: "Half the memory and download, but misses more corrections."
+        case .qwen3_1_7B: "For Polished mode: multilingual grammar, punctuation and formatting."
         }
     }
 
@@ -28,6 +39,7 @@ nonisolated enum CleanupModel: String, LocalModel {
         switch self {
         case .qwen25_1_5B: "880 MB"
         case .qwen3_0_6B: "350 MB"
+        case .qwen3_1_7B: "990 MB"
         }
     }
 
@@ -36,7 +48,7 @@ nonisolated enum CleanupModel: String, LocalModel {
         switch self {
         case .qwen25_1_5B: nil
         // Qwen 3 writes out its reasoning first unless told not to, which only adds latency here.
-        case .qwen3_0_6B: ["enable_thinking": false]
+        case .qwen3_0_6B, .qwen3_1_7B: ["enable_thinking": false]
         }
     }
 }

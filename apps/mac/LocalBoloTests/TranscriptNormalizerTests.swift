@@ -4,7 +4,10 @@ import Testing
 struct TranscriptNormalizerTests {
     @Test(arguments: [
         ("  Hello world.  ", "Hello world."),
-        ("Line one\n  line two", "Line one line two"),
+        ("Line one\n  line two", "Line one\nline two"),
+        ("Intro\r\n\r\n- One\r\n- Two", "Intro\n\n- One\n- Two"),
+        ("Use [draft] for now", "Use [draft] for now"),
+        ("你好。\n\n明天见！", "你好。\n\n明天见！"),
         ("[BLANK_AUDIO]", ""),
         ("Hello [Music] there", "Hello there"),
         ("<|endoftext|>Hi", "Hi"),

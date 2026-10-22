@@ -4,6 +4,8 @@ import SwiftUI
 struct ModelRow<Loader: ModelLoader>: View {
     let store: LocalModelStore<Loader>
     let model: Loader.Model
+    var recommendedModel: Loader.Model = .recommended
+    var isCompatible = true
 
     var body: some View {
         let status = store.status(of: model)
@@ -13,7 +15,7 @@ struct ModelRow<Loader: ModelLoader>: View {
                 HStack(spacing: 6) {
                     Text(model.displayName)
                         .font(.headline)
-                    if model == Loader.Model.recommended {
+                    if model == recommendedModel {
                         Text("Recommended")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.white)
@@ -38,6 +40,7 @@ struct ModelRow<Loader: ModelLoader>: View {
             Spacer(minLength: 12)
 
             ModelActionView(store: store, model: model)
+                .disabled(!isCompatible)
 
             if status == .installed {
                 Button("Delete", systemImage: "trash", role: .destructive) {

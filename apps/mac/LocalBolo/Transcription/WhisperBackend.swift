@@ -33,7 +33,7 @@ nonisolated struct WhisperBackend: ModelLoader {
             load: true,
             download: false
         )
-        let transcriber = WhisperTranscriber(whisperKit: try await WhisperKit(config))
+        let transcriber = WhisperTranscriber(whisperKit: try await WhisperKit(config), model: model)
         try await transcriber.warmUp()
         return transcriber
     }
@@ -47,33 +47,40 @@ nonisolated struct WhisperBackend: ModelLoader {
             .localRepoLocation(Self.repository)
             .appending(path: model.rawValue, directoryHint: .isDirectory)
     }
+
+    static func decodingOptions(for language: SpeechLanguage) -> DecodingOptions {
+        DecodingOptions(
+            task: .transcribe,
+            language: language.decodingCode,
+            temperature: 0,
+            usePrefillPrompt: true,
+            detectLanguage: language == .automatic,
+            skipSpecialTokens: true,
+            withoutTimestamps: true,
+            suppressBlank: true,
+            chunkingStrategy: .vad
+        )
+    }
 }
 
 private actor WhisperTranscriber: Transcriber {
-    /// Tuned for short English dictation: no language detection, no
-    /// timestamps, and voice-activity chunking for recordings over 30 seconds.
-    private static let options = DecodingOptions(
-        task: .transcribe,
-        language: "en",
-        temperature: 0,
-        usePrefillPrompt: true,
-        detectLanguage: false,
-        skipSpecialTokens: true,
-        withoutTimestamps: true,
-        suppressBlank: true,
-        chunkingStrategy: .vad
-    )
-
     private let whisperKit: WhisperKit
+    private let model: SpeechModel
 
-    init(whisperKit: WhisperKit) {
+    init(whisperKit: WhisperKit, model: SpeechModel) {
         self.whisperKit = whisperKit
+        self.model = model
     }
 
-    func transcribe(_ samples: [Float]) async throws -> String {
-        try await whisperKit
-            .transcribe(audioArray: samples, decodeOptions: Self.options)
-            .map(\.text)
-            .joined(separator: " ")
+    func transcribe(_ samples: [Float], language: SpeechLanguage) async throws -> SpeechTranscript {
+        guard model.supports(language) else { throw TranscriptionError.unsupportedLanguage }
+        let results = try await whisperKit.transcribe(
+            audioArray: samples, decodeOptions: WhisperBackend.decodingOptions(for: language)
+        )
+        let languages = Set(results.map(\.language))
+        return SpeechTranscript(
+            text: results.map(\.text).joined(separator: " "),
+            language: languages.count == 1 ? languages.first : nil
+        )
     }
 }

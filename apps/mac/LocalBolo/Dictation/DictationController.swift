@@ -13,6 +13,7 @@ final class DictationController {
     private(set) var lastTranscript: String?
 
     @ObservationIgnored private let license: LicenseManager
+    @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let speechModels: SpeechModelStore
     @ObservationIgnored private let cleanup: TranscriptCleanup
     @ObservationIgnored private let permissions: PermissionsMonitor
@@ -22,15 +23,20 @@ final class DictationController {
     @ObservationIgnored private var recognizer = PushToTalkRecognizer()
     @ObservationIgnored private var appActivationObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var noticeDismissal: Task<Void, Never>?
+    @ObservationIgnored private var session: (transcriber: any Transcriber, preferences: DictationPreferences)?
+
+    var isDictating: Bool { phase == .listening || phase == .transcribing }
 
     init(
         license: LicenseManager,
+        settings: AppSettings,
         speechModels: SpeechModelStore,
         cleanup: TranscriptCleanup,
         permissions: PermissionsMonitor,
         inserter: TextInserter
     ) {
         self.license = license
+        self.settings = settings
         self.speechModels = speechModels
         self.cleanup = cleanup
         self.permissions = permissions
@@ -81,8 +87,15 @@ final class DictationController {
             return showNotice("Microphone access is off")
         }
 
-        guard speechModels.transcriber != nil else {
+        let preferences = settings.dictationPreferences
+        guard speechModels.activeModel.supports(preferences.language) else {
+            return showNotice("Select Whisper Turbo in Settings for this language")
+        }
+        guard let transcriber = speechModels.transcriber else {
             return showNotice(speechModels.readinessMessage)
+        }
+        if let message = cleanup.readinessMessage(for: preferences) {
+            return showNotice(message)
         }
 
         targetApp = TargetApplication(NSWorkspace.shared.frontmostApplication)
@@ -91,6 +104,7 @@ final class DictationController {
                 Task { @MainActor in self?.updateAudioLevel(level) }
             }
             phase = .listening
+            session = (transcriber, preferences)
             warmUpModelsOnceHeld()
         } catch {
             Logger.dictation.error("Couldn't start recording: \(error.localizedDescription, privacy: .public)")
@@ -111,9 +125,9 @@ final class DictationController {
             guard phase == .listening else { return }
 
             // One runs on the Neural Engine and the other on the GPU, so neither waits for the other.
-            let transcriber = speechModels.transcriber
-            Task { try? await transcriber?.warmUp() }
-            await cleanup.warmUp()
+            guard let session else { return }
+            Task { try? await session.transcriber.warmUp() }
+            await cleanup.warmUp(preferences: session.preferences)
         }
     }
 
@@ -122,7 +136,9 @@ final class DictationController {
         let recording = recorder.stop()
         audioLevel = 0
 
-        guard recording.containsSpeech, let transcriber = speechModels.transcriber else {
+        let capturedSession = session
+        session = nil
+        guard recording.containsSpeech, let capturedSession else {
             phase = .idle
             return
         }
@@ -131,11 +147,16 @@ final class DictationController {
         Task {
             do {
                 let started = ContinuousClock.now
-                let transcript = TranscriptNormalizer.clean(try await transcriber.transcribe(recording.samples))
+                let recognized = try await capturedSession.transcriber.transcribe(
+                    recording.samples, language: capturedSession.preferences.language
+                )
+                let transcript = TranscriptNormalizer.clean(recognized.text)
                 Logger.dictation.info(
                     "Transcribed \(recording.duration, format: .fixed(precision: 1))s of audio in \(ContinuousClock.now - started, privacy: .public)"
                 )
-                let text = await cleanup.apply(to: transcript)
+                let text = await cleanup.apply(
+                    to: transcript, preferences: capturedSession.preferences, detectedLanguage: recognized.language
+                )
                 guard !text.isEmpty else {
                     phase = .idle
                     return
@@ -161,6 +182,7 @@ final class DictationController {
     private func cancelListening() {
         guard phase == .listening else { return }
         _ = recorder.stop()
+        session = nil
         audioLevel = 0
         phase = .idle
     }

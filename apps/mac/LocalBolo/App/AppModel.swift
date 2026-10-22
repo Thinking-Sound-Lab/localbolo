@@ -14,6 +14,16 @@ final class AppModel {
 
     @ObservationIgnored private let pill: PillController
 
+    var speechLanguage: SpeechLanguage {
+        get { settings.speechLanguage }
+        set {
+            settings.speechLanguage = newValue
+            if !speechModels.activeModel.supports(newValue), speechModels.isInstalled(.whisperLargeV3Turbo) {
+                speechModels.use(.whisperLargeV3Turbo)
+            }
+        }
+    }
+
     init() {
         let settings = AppSettings()
         let license = LicenseManager()
@@ -22,6 +32,7 @@ final class AppModel {
         let cleanup = TranscriptCleanup(settings: settings, models: CleanupModelStore())
         let dictation = DictationController(
             license: license,
+            settings: settings,
             speechModels: speechModels,
             cleanup: cleanup,
             permissions: permissions,
@@ -50,7 +61,11 @@ final class AppModel {
         permissions.startMonitoring()
         dictation.start()
         pill.start()
-        speechModels.loadActiveModelIfInstalled()
+        if speechModels.activeModel.supports(speechLanguage) {
+            speechModels.loadActiveModelIfInstalled()
+        } else if speechModels.isInstalled(.whisperLargeV3Turbo) {
+            speechModels.use(.whisperLargeV3Turbo)
+        }
         cleanup.start()
     }
 }

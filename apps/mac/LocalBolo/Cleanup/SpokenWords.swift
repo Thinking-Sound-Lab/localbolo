@@ -30,7 +30,7 @@ nonisolated struct SpokenWords {
         var cursor = text.startIndex
 
         // Apostrophes stay inside a word, so "it's" and "o'clock" are one word each.
-        for match in text.matches(of: /[\p{L}\p{N}]+(?:['’]\p{L}+)*/) {
+        for match in text.matches(of: /[\p{L}\p{N}][\p{L}\p{M}\p{N}]*(?:['’][\p{L}\p{M}]+)*/) {
             let separator = String(text[cursor..<match.range.lowerBound])
             if words.isEmpty {
                 leading = separator

@@ -55,7 +55,7 @@ nonisolated struct CleanupModelLoader: ModelLoader {
             using: HuggingFaceTokenizerLoader()
         )
         let editor = TranscriptEditor(container: container, model: model)
-        try await editor.warmUp()
+        try await editor.warmUp(style: model == .qwen3_1_7B ? .polished : .conservative)
         return editor
     }
 

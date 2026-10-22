@@ -5,7 +5,8 @@ import MLXLMCommon
 /// Rewrites a transcript the way the speaker meant it, using a small
 /// language model loaded in memory.
 ///
-/// Two things keep an edit to about a fifth of a second:
+/// Conservative cleanup reuses the prompt and checks copied text as a draft.
+/// Polished edits use the same machinery with a separate multilingual prompt.
 ///
 /// - The instructions and examples are the same for every edit, so the model
 ///   reads them once, when it loads, and that work is reused.
@@ -22,22 +23,33 @@ actor TranscriptEditor {
         self.model = model
     }
 
-    func edit(_ transcript: String) async throws -> String {
+    func edit(_ transcript: String, style: CleanupStyle = .conservative, language: SpeechLanguage = .english) async throws -> String {
+        try await readPromptOnce(style: style, language: language)
         let reply = try await container.perform { [memory, model] context in
-            let prompt = try await Self.promptTokens(for: transcript, model: model, context: context)
-            let tokens = Self.generate(
+            let draft = context.tokenizer.encode(text: transcript, addSpecialTokens: false)
+            guard draft.count <= 1_536 else { throw EditorError.inputTooLong }
+            let prompt = try await Self.promptTokens(for: transcript, model: model, style: style, language: language, context: context)
+            let tokens = try Self.generate(
                 prompt: prompt,
-                draft: context.tokenizer.encode(text: transcript, addSpecialTokens: false),
-                // An edit is never much longer than the original, so this only stops runaway output.
-                maxTokens: transcript.count / 2 + 32,
+                draft: draft,
+                // Hindi and Japanese can use several tokens per character.
+                maxTokens: max(128, draft.count * 2 + 64),
                 memory: memory,
                 context: context
             )
             return context.tokenizer.decode(tokenIds: tokens, skipSpecialTokens: true)
         }
-        return reply
+        return Self.normalizedReply(reply, style: style)
+    }
+
+    nonisolated static func normalizedReply(_ reply: String, style: CleanupStyle) -> String {
+        let text = reply
             .replacing(/<think>[\s\S]*?<\/think>/, with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard style == .polished else { return text }
+        // The clipboard carries plain text. Models sometimes emit Markdown's
+        // two-space hard break when asked for a new paragraph.
+        return text.replacing(/[ \t]{2,}\n/, with: "\n\n")
     }
 
     /// Gets the model ready to edit without a wait, by running one short edit.
@@ -47,20 +59,22 @@ actor TranscriptEditor {
     /// memory, macOS moves an idle app's memory to disk within seconds, and
     /// bringing a model back takes a second or more. That is better spent
     /// while the user is still speaking than after they've finished.
-    func warmUp() async throws {
-        try await readPromptOnce()
-        _ = try await edit("The meeting is at noon. Sorry, at one.")
+    func warmUp(style: CleanupStyle = .conservative, language: SpeechLanguage = .english) async throws {
+        _ = try await edit("The meeting is at noon. Sorry, at one.", style: style, language: language)
     }
 
     /// Runs the start of the prompt, which every edit shares, through the
     /// model and keeps the result. Only the first call does anything.
-    private func readPromptOnce() async throws {
+    private func readPromptOnce(style: CleanupStyle, language: SpeechLanguage) async throws {
         try await container.perform { [memory, model] context in
-            guard memory.cache == nil else { return }
+            guard memory.cache == nil || memory.style != style || memory.language != language else { return }
+            // One GPU prompt cache, rather than a cache for every language/mode.
+            memory.cache = nil
+            memory.tokens = []
 
             // Whatever two different prompts both start with is the part that never changes.
-            let first = try await Self.promptTokens(for: "a b c", model: model, context: context)
-            let second = try await Self.promptTokens(for: "X Y Z", model: model, context: context)
+            let first = try await Self.promptTokens(for: "a b c", model: model, style: style, language: language, context: context)
+            let second = try await Self.promptTokens(for: "X Y Z", model: model, style: style, language: language, context: context)
             let shared = Array(first.prefix(zip(first, second).prefix { $0 == $1 }.count))
 
             let cache = context.model.newCache(parameters: nil)
@@ -76,6 +90,8 @@ actor TranscriptEditor {
             }
             memory.cache = cache
             memory.tokens = shared
+            memory.style = style
+            memory.language = language
         }
     }
 
@@ -84,10 +100,14 @@ actor TranscriptEditor {
     private static func promptTokens(
         for transcript: String,
         model: CleanupModel,
+        style: CleanupStyle,
+        language: SpeechLanguage,
         context: ModelContext
     ) async throws -> [Int] {
         let input = UserInput(
-            chat: CleanupPrompt.messages(for: transcript),
+            chat: style == .polished
+                ? PolishedPrompt.messages(for: transcript, language: language)
+                : CleanupPrompt.messages(for: transcript),
             additionalContext: model.chatTemplateContext
         )
         return try await context.processor.prepare(input: input).text.tokens.asArray(Int.self)
@@ -101,7 +121,7 @@ actor TranscriptEditor {
         maxTokens: Int,
         memory: PromptMemory,
         context: ModelContext
-    ) -> [Int] {
+    ) throws -> [Int] {
         let model = context.model
         let tokenizer = context.tokenizer
         let cache = memory.cache ?? model.newCache(parameters: nil)
@@ -109,6 +129,14 @@ actor TranscriptEditor {
         // Skip the start of the prompt the model has already read.
         let remembered = zip(prompt.dropLast(), memory.tokens).prefix { $0 == $1 }.count
         trimPromptCache(cache, numTokens: memory.tokens.count - remembered)
+        // Rewind after errors and cancellation too, never retaining a dictation
+        // as part of the next one's shared prompt.
+        defer {
+            trimPromptCache(cache, numTokens: (cache.first?.offset ?? remembered) - remembered)
+            eval(cache)
+            memory.cache = cache
+            memory.tokens = Array(prompt[..<remembered])
+        }
 
         var stopTokens = context.configuration.eosTokenIds
         stopTokens.formUnion([tokenizer.eosTokenId, tokenizer.unknownTokenId].compactMap { $0 })
@@ -122,11 +150,13 @@ actor TranscriptEditor {
         var pending = Array(prompt[remembered...])
         var output: [Int] = []
         var state: LMOutput.State?
+        var reachedEnd = false
 
         while output.count < maxTokens {
+            try Task.checkCancellation()
             // One pass reads what's new and checks the draft: the model's pick after each
             // position shows how far the draft was right.
-            let offered = cursor.draft
+            let offered = Array(cursor.draft.prefix(maxTokens - output.count - 1))
             let input = LMInput.Text(tokens: MLXArray(pending + offered))
             let result = model(input[text: .newAxis], cache: cache, state: state)
             state = result.state
@@ -138,28 +168,29 @@ actor TranscriptEditor {
             output.append(contentsOf: offered.prefix(accepted))
 
             let token = picks[accepted]
-            if stopTokens.contains(token) { break }
+            if stopTokens.contains(token) { reachedEnd = true; break }
             output.append(token)
             pending = [token]
             cursor.advance(accepted: accepted, of: offered.count, then: token, output: output)
         }
 
-        // Keep only the shared start of the prompt, so nothing of this dictation
-        // is left for the next one.
-        trimPromptCache(cache, numTokens: (cache.first?.offset ?? remembered) - remembered)
-        eval(cache)
-        memory.cache = cache
-        memory.tokens = Array(prompt[..<remembered])
-
-        return Array(output.prefix(maxTokens))
+        // A truncated edit must never be pasted as though it were complete.
+        guard reachedEnd else { throw EditorError.outputTooLong }
+        return output
     }
 }
 
 nonisolated enum EditorError: LocalizedError {
     case cacheCannotRewind
+    case inputTooLong
+    case outputTooLong
 
     var errorDescription: String? {
-        "This model can't be used for cleanup."
+        switch self {
+        case .cacheCannotRewind: "This model can't be used for cleanup."
+        case .inputTooLong: "This passage is too long to edit safely."
+        case .outputTooLong: "The edit did not finish; keeping the original passage."
+        }
     }
 }
 
@@ -170,4 +201,6 @@ private nonisolated final class PromptMemory: @unchecked Sendable {
     /// The model's attention state after reading `tokens`.
     var cache: [KVCache]?
     var tokens: [Int] = []
+    var style: CleanupStyle?
+    var language: SpeechLanguage?
 }
