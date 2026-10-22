@@ -57,8 +57,9 @@ nonisolated enum PolishedTextPolicy {
     /// The original without what the speaker took back, as the edit shows it.
     ///
     /// A stretch the edit dropped counts as taken back if it ends with a
-    /// correction phrase said after something else, give or take a couple of
-    /// words restarting the sentence: "明天9点见，不对，10点见" loses "9点见，不对".
+    /// correction phrase said after something else in the same statement, give
+    /// or take a couple of words restarting the sentence: "明天9点见，不对，10点见"
+    /// loses "9点见，不对".
     /// The correction itself must survive in the edit. An edit that keeps the
     /// withdrawn version instead is compared with all of the original.
     private static func withoutTakenBack(_ original: String, editedTo edited: String) -> String {
@@ -77,15 +78,21 @@ nonisolated enum PolishedTextPolicy {
             while end + 1 < before.count, !kept.contains(end + 1) { end += 1 }
             let dropped = before[index...end]
             let run = dropped.first!.range.lowerBound..<dropped.last!.range.upperBound
-            let takenBack = cues.contains { cue in
-                guard run.lowerBound < cue.lowerBound, cue.upperBound <= run.upperBound else { return false }
+            let withdrawn = cues.lazy.compactMap { cue -> Range<String.Index>? in
+                guard run.lowerBound < cue.lowerBound, cue.upperBound <= run.upperBound else { return nil }
+                // Only the statement being corrected is taken back, never earlier sentences.
+                let statement = statementStart(correctedBy: cue, in: original)
+                guard let start = dropped.first(where: { $0.range.lowerBound >= statement })?.range.lowerBound,
+                      start < cue.lowerBound else { return nil }
                 let restart = dropped.filter { $0.range.lowerBound >= cue.upperBound }
-                guard restart.count <= 2, !restart.contains(where: { $0.text.contains(where: \.isNumber) }) else { return false }
-                return survives(String(original[cue.upperBound..<sentenceEnd(after: cue.upperBound, in: original)]), in: edited)
-            }
-            if takenBack {
-                result += original[cursor..<run.lowerBound]
-                cursor = run.upperBound
+                guard restart.count <= 2, !restart.contains(where: { $0.text.contains(where: \.isNumber) }),
+                      survives(String(original[cue.upperBound..<sentenceEnd(after: cue.upperBound, in: original)]), in: edited)
+                else { return nil }
+                return start..<run.upperBound
+            }.first
+            if let withdrawn {
+                result += original[cursor..<withdrawn.lowerBound]
+                cursor = withdrawn.upperBound
             }
             index = end + 1
         }
@@ -110,8 +117,21 @@ nonisolated enum PolishedTextPolicy {
         }
     }
 
+    private static var sentenceBoundary: Regex<Substring> { /[。！？!?।\n]|\.(?=\s|$)/ }
+
     private static func sentenceEnd(after position: String.Index, in text: String) -> String.Index {
-        text[position...].firstRange(of: /[。！？!?।\n]|\.(?=\s|$)/)?.lowerBound ?? text.endIndex
+        text[position...].firstRange(of: sentenceBoundary)?.lowerBound ?? text.endIndex
+    }
+
+    /// Where the statement a correction phrase takes back begins: the phrase's
+    /// own sentence, or the one before when the phrase opens a sentence, as in
+    /// "我们9点见。不对，10点见".
+    private static func statementStart(correctedBy cue: Range<String.Index>, in text: String) -> String.Index {
+        let boundaries = text[..<cue.lowerBound].ranges(of: sentenceBoundary)
+        guard let last = boundaries.last else { return text.startIndex }
+        let opensSentence = !text[last.upperBound..<cue.lowerBound].contains { $0.isLetter || $0.isNumber }
+        guard opensSentence else { return last.upperBound }
+        return boundaries.dropLast().last?.upperBound ?? text.startIndex
     }
 
     /// Whether the facts of a spoken correction all appear in the edit.

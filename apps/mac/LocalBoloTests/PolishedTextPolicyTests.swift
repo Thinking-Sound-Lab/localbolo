@@ -57,6 +57,8 @@ struct PolishedTextPolicyTests {
         ("कल 5 बजे, नहीं, 6 बजे मिलते हैं", "कल 6 बजे मिलते हैं।", "hi"),
         ("Pay $20 for lunch and $250, sorry, $300 for rent.", "Pay $20 for lunch and $300 for rent.", "en"),
         ("she have meeting at 9, sorry, at 10", "She has a meeting at 10.", "en"),
+        // A correction that opens a sentence takes back the one before.
+        ("我们9点见。不对，10点见。", "我们10点见。", "zh"),
     ])
     func appliesSpokenCorrections(original: String, edited: String, language: String) {
         #expect(PolishedTextPolicy.accepts(edited, original: original, language: language))
@@ -72,6 +74,9 @@ struct PolishedTextPolicyTests {
         // Drops a fact with no correction to explain it.
         ("明天9点和10点见", "明天10点见。", "zh"),
         ("Pay $20 for lunch and $300 for rent.", "Pay $300 for rent.", "en"),
+        // A correction doesn't take back an earlier, separate statement.
+        ("3号送资料。9点，不对，10点开会", "10点开会。", "zh"),
+        ("3号送资料。我们9点见。不对，10点见。", "我们10点见。", "zh"),
     ])
     func rejectsCorrectionsThatLoseTheFinalVersion(original: String, edited: String, language: String) {
         #expect(!PolishedTextPolicy.accepts(edited, original: original, language: language))
