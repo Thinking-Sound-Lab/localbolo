@@ -117,17 +117,25 @@ nonisolated enum PolishedTextPolicy {
         }
     }
 
-    private static var sentenceBoundary: Regex<Substring> { /[。！？!?।\n]|\.(?=\s|$)/ }
+    /// Sentence ends, not counting the period of an abbreviation like "p.m." or "Dr.".
+    private static func sentenceBoundaries(in text: Substring) -> [Range<String.Index>] {
+        let abbreviations: Set<String> = ["mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc", "inc", "ltd"]
+        return text.ranges(of: /[。！？!?।\n]|\.(?=\s|$)/).filter { range in
+            guard text[range] == "." else { return true }
+            let word = String(text[..<range.lowerBound].reversed().prefix { $0.isLetter }.reversed())
+            return word.isEmpty || word.count > 1 && !abbreviations.contains(word.lowercased())
+        }
+    }
 
     private static func sentenceEnd(after position: String.Index, in text: String) -> String.Index {
-        text[position...].firstRange(of: sentenceBoundary)?.lowerBound ?? text.endIndex
+        sentenceBoundaries(in: text[position...]).first?.lowerBound ?? text.endIndex
     }
 
     /// Where the statement a correction phrase takes back begins: the phrase's
     /// own sentence, or the one before when the phrase opens a sentence, as in
     /// "我们9点见。不对，10点见".
     private static func statementStart(correctedBy cue: Range<String.Index>, in text: String) -> String.Index {
-        let boundaries = text[..<cue.lowerBound].ranges(of: sentenceBoundary)
+        let boundaries = sentenceBoundaries(in: text[..<cue.lowerBound])
         guard let last = boundaries.last else { return text.startIndex }
         let opensSentence = !text[last.upperBound..<cue.lowerBound].contains { $0.isLetter || $0.isNumber }
         guard opensSentence else { return last.upperBound }

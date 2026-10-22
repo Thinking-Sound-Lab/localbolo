@@ -59,6 +59,8 @@ struct PolishedTextPolicyTests {
         ("she have meeting at 9, sorry, at 10", "She has a meeting at 10.", "en"),
         // A correction that opens a sentence takes back the one before.
         ("我们9点见。不对，10点见。", "我们10点见。", "zh"),
+        // The period of "p.m." doesn't end the statement being corrected.
+        ("कल 5 p.m. बजे, नहीं, 6 p.m. बजे मिलते हैं", "कल 6 p.m. बजे मिलते हैं।", "hi"),
     ])
     func appliesSpokenCorrections(original: String, edited: String, language: String) {
         #expect(PolishedTextPolicy.accepts(edited, original: original, language: language))
