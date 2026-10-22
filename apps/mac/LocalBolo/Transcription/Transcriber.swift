@@ -2,6 +2,8 @@
 nonisolated protocol Transcriber: Sendable {
     /// Transcribes 16 kHz mono samples.
     func transcribe(_ samples: [Float], language: SpeechLanguage) async throws -> SpeechTranscript
+    /// Wakes the model before it's needed. See the default implementation.
+    func warmUp() async throws
 }
 
 nonisolated extension Transcriber {

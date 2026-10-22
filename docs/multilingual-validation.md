@@ -22,7 +22,7 @@ Examples observed with the real editor:
 | Input | Output |
 | --- | --- |
 | she have two meeting tomorrow | She has two meetings tomorrow. |
-| 明天我们要开会请带上电脑 | 明天我们要开会。请带上电脑。 |
+| 明天我们要开会请带上电脑 | 明天我们要开会，请带上电脑。 |
 | रीना ने मुझे किताब दिया | रीना ने मुझे किताब दी। |
 | 私は昨日映画を見ますた | 私は昨日映画を見ました。 |
 | आज team meeting है please send the agenda | आज team meeting है। Please send the agenda. |
@@ -45,11 +45,12 @@ passes checks; changing `$250` to `€250` does not.
 - One observed run used about 1.06 GB active MLX memory, a 34 MB reusable buffer
   cache, and 1.35 GB peak MLX memory. These figures exclude Core ML and the rest
   of the application, and are not a guarantee of whole-process memory use.
-- In that run, short recognition fixtures took roughly 1.3–2.0 seconds. English
-  grammar editing took about 0.5 seconds; the other text fixtures took roughly
-  2.1–2.3 seconds including rebuilding the prompt after language changes. These
-  are individual observations, not p50/p95 measurements or release-to-paste
-  benchmarks. Dictation warms the selected editor while fn is held.
+- In the latest run, short recognition fixtures took roughly 1.4–1.9 seconds and
+  each text fixture took about 0.5–0.6 seconds, including a change of language.
+  These are individual observations. See `dictation-performance.md` for repeated
+  measurements. Dictation warms both models while fn is held.
+- A 0.4-second Japanese reply (“はい”) is recognized. WhisperKit skips audio of a
+  second or less, so recordings that short are padded with silence.
 
 ## Reproduce
 

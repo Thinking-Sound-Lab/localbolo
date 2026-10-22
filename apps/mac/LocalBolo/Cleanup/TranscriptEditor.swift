@@ -59,37 +59,46 @@ actor TranscriptEditor {
     /// memory, macOS moves an idle app's memory to disk within seconds, and
     /// bringing a model back takes a second or more. That is better spent
     /// while the user is still speaking than after they've finished.
+    ///
+    /// A real edit also wakes the tokenizer and the decoding path. A single
+    /// forward pass was measured to leave the next edit slower after idle.
     func warmUp(style: CleanupStyle = .conservative, language: SpeechLanguage = .english) async throws {
         _ = try await edit("The meeting is at noon. Sorry, at one.", style: style, language: language)
     }
 
-    /// Runs the start of the prompt, which every edit shares, through the
-    /// model and keeps the result. Only the first call does anything.
+    /// Keeps the shared prompt ready, reusing its matching prefix when the
+    /// selected language or editing style changes.
     private func readPromptOnce(style: CleanupStyle, language: SpeechLanguage) async throws {
         try await container.perform { [memory, model] context in
             guard memory.cache == nil || memory.style != style || memory.language != language else { return }
-            // One GPU prompt cache, rather than a cache for every language/mode.
-            memory.cache = nil
-            memory.tokens = []
-
             // Whatever two different prompts both start with is the part that never changes.
             let first = try await Self.promptTokens(for: "a b c", model: model, style: style, language: language, context: context)
             let second = try await Self.promptTokens(for: "X Y Z", model: model, style: style, language: language, context: context)
             let shared = Array(first.prefix(zip(first, second).prefix { $0 == $1 }.count))
 
-            let cache = context.model.newCache(parameters: nil)
+            // Retain the matching prefix in the single GPU cache. In Polished
+            // mode, changing language only changes the short final hint.
+            let cache = memory.cache ?? context.model.newCache(parameters: nil)
             // Reusing the prompt and checking drafts both depend on rewinding the cache,
             // which a few model architectures can't do.
             guard canTrimPromptCache(cache) else { throw EditorError.cacheCannotRewind }
 
+            let remembered = zip(shared, memory.tokens).prefix { $0 == $1 }.count
+            trimPromptCache(cache, numTokens: (cache.first?.offset ?? 0) - remembered)
+            memory.cache = cache
+            memory.tokens = Array(shared.prefix(remembered))
+            memory.style = nil
+            memory.language = nil
+
             // In pieces, so reading a long prompt doesn't need much memory at once.
-            for start in stride(from: 0, to: shared.count, by: 256) {
+            for start in stride(from: remembered, to: shared.count, by: 256) {
+                try Task.checkCancellation()
                 let piece = Array(shared[start..<min(start + 256, shared.count)])
                 _ = context.model(LMInput.Text(tokens: MLXArray(piece))[text: .newAxis], cache: cache, state: nil)
                 eval(cache)
+                // Keep cache bookkeeping valid even if preparation is cancelled.
+                memory.tokens.append(contentsOf: piece)
             }
-            memory.cache = cache
-            memory.tokens = shared
             memory.style = style
             memory.language = language
         }

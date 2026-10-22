@@ -46,6 +46,13 @@ struct MultilingualIntegrationTests {
         let auto = try await transcriber.transcribe(try synthesize("明日は会社に行きます。", voice: "Kyoko"), language: .automatic)
         #expect(auto.language == "ja")
         #expect(auto.text.contains("会社"))
+
+        // WhisperKit skips audio of a second or less unless it's padded.
+        let quick = try synthesize("はい", voice: "Kyoko")
+        #expect(Double(quick.count) < AudioRecorder.sampleRate)
+        let reply = try await transcriber.transcribe(quick, language: .japanese)
+        print("ASR quick reply (\(Double(quick.count) / AudioRecorder.sampleRate)s): \(reply.text)")
+        #expect(reply.text.contains("はい"))
         print("MLX active=\(Memory.activeMemory) cache=\(Memory.cacheMemory) peak=\(Memory.peakMemory)")
         cleanupModels.unload()
         store.unload()
@@ -92,6 +99,7 @@ struct MultilingualIntegrationTests {
         #expect(mixed.contains("आज"))
         #expect(mixed.contains("team meeting"))
         #expect(mixed.contains("agenda"))
+        #expect(mixed.hasSuffix("agenda."))
         #expect(!mixed.contains("。"))
 
         // Warm prompt state must not mix styles, languages or prior dictations.
@@ -100,6 +108,29 @@ struct MultilingualIntegrationTests {
         #expect(PolishedTextPolicy.accepts(unchanged, original: original, language: "en"))
         #expect(unchanged.contains("250"))
         #expect(unchanged.contains("cannot"))
+        store.unload()
+    }
+
+    @Test func rewindsSharedPromptAfterWarmupsAndLanguageChanges() async throws {
+        let store = CleanupModelStore(defaults: try isolatedDefaults())
+        await store.activate(.qwen3_1_7B)
+        let editor = try #require(store.loaded)
+        let original = "The invoice is 250 dollars and we cannot approve it."
+        let expected = try await editor.edit(original, style: .polished, language: .english)
+        for language in [SpeechLanguage.chinese, .hindi, .japanese, .automatic] {
+            try await editor.warmUp(style: .polished, language: language)
+            _ = try await editor.edit("कल meeting है please report भेज देना", style: .polished, language: language)
+            try await editor.warmUp(style: .polished, language: .english)
+            let repeated = try await editor.edit(original, style: .polished, language: .english)
+            #expect(repeated == expected)
+        }
+
+        try await editor.warmUp(style: .conservative)
+        let corrected = try await editor.edit("Let's have dinner on Friday at 7. Sorry, at 8.")
+        #expect(corrected.contains("at 8"))
+        #expect(!corrected.contains("at 7"))
+        let repeated = try await editor.edit(original, style: .polished, language: .english)
+        #expect(repeated == expected)
         store.unload()
     }
 

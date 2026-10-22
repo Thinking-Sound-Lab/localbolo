@@ -47,6 +47,19 @@ struct MultilingualDictationTests {
         #expect(options.task == .transcribe)
     }
 
+    @Test func padsShortRecordingsSoWhisperTranscribesThem() {
+        let clipTime = WhisperBackend.decodingOptions(for: .japanese).windowClipTime
+        let short = [Float](repeating: 0.5, count: Int(0.6 * AudioRecorder.sampleRate))
+        let padded = WhisperBackend.padded(short, beyond: clipTime)
+        // WhisperKit only decodes audio longer than the clip time.
+        #expect(Double(padded.count) > Double(clipTime) * AudioRecorder.sampleRate)
+        #expect(Array(padded.prefix(short.count)) == short)
+        #expect(padded.dropFirst(short.count).allSatisfy { $0 == 0 })
+
+        let long = [Float](repeating: 0.5, count: Int(3 * AudioRecorder.sampleRate))
+        #expect(WhisperBackend.padded(long, beyond: clipTime) == long)
+    }
+
     @Test func keepsHindiCombiningMarksInsideWords() {
         #expect(SpokenWords("मैंने रिपोर्ट भेज दी।").words.map(\.text) == ["मैंने", "रिपोर्ट", "भेज", "दी"])
     }

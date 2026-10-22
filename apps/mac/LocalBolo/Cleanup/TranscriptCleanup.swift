@@ -7,6 +7,9 @@ import os
 final class TranscriptCleanup {
     let models: CleanupModelStore
     @ObservationIgnored private let settings: AppSettings
+    /// What Auto last detected. The next dictation is most likely the same
+    /// language, so warming up for it keeps switching off the critical path.
+    @ObservationIgnored private var lastDetectedLanguage: SpeechLanguage?
 
     init(settings: AppSettings, models: CleanupModelStore) {
         self.settings = settings
@@ -54,7 +57,8 @@ final class TranscriptCleanup {
     func warmUp(preferences: DictationPreferences? = nil) async {
         let preferences = preferences ?? settings.dictationPreferences
         guard preferences.cleanupEnabled, let editor = models.loaded else { return }
-        try? await editor.warmUp(style: preferences.cleanupStyle, language: preferences.language)
+        let language = preferences.language == .automatic ? lastDetectedLanguage ?? .automatic : preferences.language
+        try? await editor.warmUp(style: preferences.cleanupStyle, language: language)
     }
 
     func apply(to transcript: String, preferences: DictationPreferences? = nil, detectedLanguage: String? = "en") async -> String {
@@ -64,6 +68,7 @@ final class TranscriptCleanup {
         let editingLanguage = preferences.language == .automatic
             ? detectedLanguage.flatMap(SpeechLanguage.init) ?? .automatic
             : preferences.language
+        if preferences.language == .automatic { lastDetectedLanguage = editingLanguage }
         let started = ContinuousClock.now
         let text = await TranscriptProcessor.apply(
             to: transcript, style: preferences.cleanupStyle, language: detectedLanguage

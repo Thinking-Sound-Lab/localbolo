@@ -61,11 +61,22 @@ nonisolated struct WhisperBackend: ModelLoader {
             chunkingStrategy: .vad
         )
     }
+
+    /// WhisperKit skips audio no longer than `windowClipTime` (a second), so a
+    /// quick "はい" came back empty and warming up on a second of silence never
+    /// woke the model. Whisper pads every window with silence to 30 seconds
+    /// anyway, so a little more of it at the end doesn't change what it hears.
+    static func padded(_ samples: [Float], beyond clipTime: Float) -> [Float] {
+        let minimum = Int((Double(clipTime) + 0.1) * AudioRecorder.sampleRate)
+        guard samples.count < minimum else { return samples }
+        return samples + repeatElement(0, count: minimum - samples.count)
+    }
 }
 
 private actor WhisperTranscriber: Transcriber {
     private let whisperKit: WhisperKit
     private let model: SpeechModel
+    private var lastRun: ContinuousClock.Instant?
 
     init(whisperKit: WhisperKit, model: SpeechModel) {
         self.whisperKit = whisperKit
@@ -74,13 +85,34 @@ private actor WhisperTranscriber: Transcriber {
 
     func transcribe(_ samples: [Float], language: SpeechLanguage) async throws -> SpeechTranscript {
         guard model.supports(language) else { throw TranscriptionError.unsupportedLanguage }
+        let options = WhisperBackend.decodingOptions(for: language)
         let results = try await whisperKit.transcribe(
-            audioArray: samples, decodeOptions: WhisperBackend.decodingOptions(for: language)
+            audioArray: WhisperBackend.padded(samples, beyond: options.windowClipTime), decodeOptions: options
         )
+        lastRun = .now
         let languages = Set(results.map(\.language))
         return SpeechTranscript(
             text: results.map(\.text).joined(separator: " "),
             language: languages.count == 1 ? languages.first : nil
         )
+    }
+
+    /// Wakes the encoder and decoder, which go cold when idle like any model.
+    ///
+    /// The encoder always reads a 30-second window, so this costs about a
+    /// second of Neural Engine time however short the audio is. A dictation
+    /// released before it finishes waits for it, so skip it when the model
+    /// has just run and is still awake.
+    func warmUp() async throws {
+        if let lastRun, lastRun.duration(to: .now) < .seconds(15) { return }
+        var options = WhisperBackend.decodingOptions(for: .english)
+        // One sampled token after the forced prompt already runs every decoder
+        // layer, and silence must not trigger retries at higher temperatures.
+        options.sampleLength = 1
+        options.temperatureFallbackCount = 0
+        _ = try await whisperKit.transcribe(
+            audioArray: WhisperBackend.padded([], beyond: options.windowClipTime), decodeOptions: options
+        )
+        lastRun = .now
     }
 }
