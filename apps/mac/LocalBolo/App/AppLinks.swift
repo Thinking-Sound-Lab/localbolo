@@ -4,9 +4,8 @@ import Foundation
 /// comes from the WEBSITE_URL build setting, through the app's Info.plist.
 enum AppLinks {
     static let buy = page("/#pricing")
-    /// Explains key recovery for direct and AppSumo purchases.
+    /// Explains how to find a lost key: Dodo's customer portal shows it.
     static let findLicense = page("/support#lost-key")
-    static let appSumo = page("/appsumo")
     static let support = page("/support")
 
     private static func page(_ path: String) -> URL {

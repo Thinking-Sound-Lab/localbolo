@@ -14,8 +14,6 @@ ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-Dev
 // Licenses are checked against Dodo Payments' test mode, so test-mode keys work.
 // (`/$()/` stops xcconfig from reading `//` as a comment.)
 LICENSE_SERVER_URL = https:/$()/test.dodopayments.com
-// Opt in to an isolated AppSumo staging server in Local.xcconfig.
-APPSUMO_LICENSE_SERVER_URL =
 
 // No update feed: development builds are built locally and never update
 // themselves, so Sparkle stays off.

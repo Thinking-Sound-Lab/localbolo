@@ -7,6 +7,3 @@
 
 DEVELOPMENT_TEAM = ABCDE12345
 CODE_SIGN_IDENTITY = Apple Development
-
-// Optional isolated AppSumo staging API. Never put API credentials in this file.
-// APPSUMO_LICENSE_SERVER_URL = https:/$()/staging.example.com/api

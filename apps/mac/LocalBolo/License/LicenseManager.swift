@@ -5,11 +5,11 @@ import os
 /// A license key activated on this Mac.
 nonisolated struct Activation: Codable, Equatable, Sendable {
     let licenseKey: String
-    /// The provider's ID for this Mac's activation, needed to deactivate it.
+    /// Dodo's ID for this Mac's activation (`lki_…`), needed to deactivate it.
     let instanceID: String
     /// The Mac the key was activated on (`MachineIdentity`).
     let machineID: String
-    /// When the license server last confirmed the key was still valid.
+    /// When Dodo last confirmed the key was still valid.
     var lastValidated: Date
     /// The latest time LocalBolo has seen, to tell when the clock is turned
     /// back.
@@ -19,7 +19,7 @@ nonisolated struct Activation: Codable, Equatable, Sendable {
 /// The license that unlocks LocalBolo on this Mac.
 ///
 /// The buyer activates the key from their purchase email once. Each
-/// activation is tied to one Mac, and the server limits how many Macs a key can be
+/// activation is tied to one Mac, and Dodo limits how many Macs a key can be
 /// active on. Every two weeks the app quietly re-checks the key, so a refunded
 /// or deactivated key stops working; if it can't get through for a month, or
 /// the clock is turned back, it asks to connect once before dictating again.
@@ -29,11 +29,11 @@ final class LicenseManager {
         case notActivated
         case active
         /// Activated, but it's been too long since a successful check with
-        /// the license server, or the clock has been turned back since.
+        /// Dodo, or the clock has been turned back since.
         case needsVerification
     }
 
-    /// How often the app re-checks the key: every two weeks.
+    /// How often the app re-checks the key with Dodo: every two weeks.
     static let revalidationInterval: TimeInterval = 14 * 24 * 60 * 60
     /// How long LocalBolo keeps working without a successful check: 30 days.
     static let offlineAllowance: TimeInterval = 30 * 24 * 60 * 60
@@ -103,8 +103,7 @@ final class LicenseManager {
 
     /// Activates `key` on this Mac.
     func activate(key rawKey: String) async {
-        let trimmed = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        let key = LicenseClient.isAppSumoKey(trimmed) ? trimmed.uppercased() : trimmed
+        let key = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !key.isEmpty, !isWorking, let client else { return }
 
         isWorking = true
@@ -112,7 +111,7 @@ final class LicenseManager {
         defer { isWorking = false }
 
         do {
-            let instanceID = try await client.activate(key: key, deviceName: deviceName, deviceID: machineID)
+            let instanceID = try await client.activate(key: key, deviceName: deviceName)
             let date = now()
             save(Activation(licenseKey: key, instanceID: instanceID, machineID: machineID, lastValidated: date, latestSeen: date))
             Logger.license.info("Activated this Mac")
@@ -121,7 +120,7 @@ final class LicenseManager {
         }
     }
 
-    /// Checks the key right away, for "Try Again" and "Verify Now".
+    /// Checks the key with Dodo right away, for "Try Again" and "Verify Now".
     func verifyNow() async {
         guard let activation, !isWorking else { return }
 
@@ -145,7 +144,7 @@ final class LicenseManager {
         do throws(LicenseError) {
             try await client.deactivate(key: activation.licenseKey, instanceID: activation.instanceID)
         } catch .notFound, .inactive {
-            // Already gone on the server, so there's nothing left to free.
+            // Already gone on Dodo's side, so there's nothing left to free.
         } catch {
             errorMessage = error.localizedDescription
             return
@@ -154,7 +153,7 @@ final class LicenseManager {
         Logger.license.info("Deactivated this Mac")
     }
 
-    /// Checks the key if it's been two weeks, or if the clock has
+    /// Checks the key with Dodo if it's been two weeks, or if the clock has
     /// been turned back. Errors are only logged: being offline is fine until
     /// the 30-day allowance runs out.
     func revalidateIfDue() async {
@@ -169,7 +168,7 @@ final class LicenseManager {
 
     // MARK: - Private
 
-    /// Asks the license server whether `activation` is still valid and records the answer:
+    /// Asks Dodo whether `activation` is still valid and records the answer:
     /// a yes renews it, a definite no removes it. Returns why the question
     /// couldn't be answered, if it couldn't.
     private func check(_ activation: Activation) async -> LicenseError? {
@@ -190,7 +189,7 @@ final class LicenseManager {
 
         if isValid {
             // Start counting again from the clock as it reads now, even if it
-            // was changed: the license server has just confirmed the key.
+            // was changed: Dodo has just confirmed the key.
             let date = now()
             current.lastValidated = date
             current.latestSeen = date

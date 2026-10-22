@@ -16,13 +16,13 @@ export function GET() {
 
 ${site.name} is a dictation app for Mac. Hold the fn key, speak, and let go: your words are transcribed by a speech model running on your Mac and pasted at your cursor in any app. Audio never leaves the device.
 
-- Pricing (${site.price.currency}, one-time): ${licensePlans.map((plan) => `${plan.name} for ${plan.label}`).join("; ")}, with a ${site.refundDays}-day refund for direct purchases
+- Pricing (${site.price.currency}, one-time): ${licensePlans.map((plan) => `${plan.name} for ${plan.label}`).join("; ")}, with a ${site.refundDays}-day refund
 - Support: ${site.supportEmail}
 - Requirements: ${site.requirements}
 - Speech models: ${speechModels.map((model) => `${model.name} (${model.megabytes} MB)`).join(", ")}
 - Optional transcript cleanup with an on-device language model (Qwen 2.5 1.5B)
 - Download: ${site.url}${site.downloadUrl}. Each plan includes one license key, activating 1, 2, or 5 Macs according to the chosen plan. Existing keys retain their original activation limit.
-- Lost license key: ${site.url}/support#lost-key (direct and AppSumo purchases)
+- Lost license key: ${site.url}${site.findLicenseUrl}
 - Made by ${site.company}
 
 ## Pages
@@ -32,7 +32,7 @@ ${site.name} is a dictation app for Mac. Hold the fn key, speak, and let go: you
 - [Changelog](${site.url}/changelog): what's new in each version
 - [Privacy policy](${site.url}/privacy): exactly what the app and website do with your data
 - [Terms of service](${site.url}/terms): the license and terms for using ${site.name}
-- [Refund policy](${site.url}/refunds): ${site.refundDays} days for direct purchases; AppSumo order terms apply to AppSumo purchases
+- [Refund policy](${site.url}/refunds): a full refund within ${site.refundDays} days
 
 ## FAQ
 

@@ -28,7 +28,7 @@ if (!apply) {
       let entitlement = entitlements.find(item => item.metadata?.localbolo_plan === plan.id);
       entitlement ??= await client.entitlements.create({
         name: `LocalBolo: ${plan.name} per key`, integration_type: 'license_key',
-        integration_config: { activations_limit: plan.macs, fulfillment_mode: 'auto', activation_message: `Download LocalBolo at https://localbolo.app/download. Use this key on up to ${plan.macs} Mac(s). Deactivate a Mac in Settings > License before moving an activation.` },
+        integration_config: { activations_limit: plan.macs, fulfillment_mode: 'auto', activation_message: `Download LocalBolo at https://localbolo.app/download. Use this key on up to ${plan.name}. Deactivate a Mac in Settings > License before moving an activation.` },
         metadata: { localbolo_catalog: catalog, localbolo_plan: plan.id },
       });
       let product = products.find(item => item.metadata?.localbolo_plan === plan.id);
@@ -40,6 +40,16 @@ if (!apply) {
         entitlements: [{ entitlement_id: entitlement.id }],
         metadata: { localbolo_catalog: catalog, localbolo_plan: plan.id },
       });
+      // A product copied into live mode keeps its price but loses its license
+      // key. Attach the plan's key, but never replace a different one.
+      const attached = (await client.products.retrieve(product.product_id)).entitlements
+        .filter(item => item.integration_type === 'license_key');
+      if (attached.length === 0) {
+        await client.products.update(product.product_id, { entitlements: [{ entitlement_id: entitlement.id }] });
+        console.log(`Attached the ${plan.name} license key to ${product.product_id}.`);
+      } else if (attached.length !== 1 || attached[0].id !== entitlement.id) {
+        throw new Error(`${product.product_id} already issues a different license key; fix it in the Dodo dashboard`);
+      }
       verifyPlanProduct(await client.products.retrieve(product.product_id), plan);
       env[plan.productEnv] = product.product_id;
     }

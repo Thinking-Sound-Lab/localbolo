@@ -34,12 +34,10 @@ const sections: DocSection[] = [
           is licensed to you, not sold.
         </p>
         <p>
-          You activate {site.name} with the license key from your purchase email or AppSumo
-          activation page. Each new key activates
-          one, two, or five Macs at a time, according to your plan. Existing keys keep their
-          original activation limit. To move a key to a new Mac, deactivate it on the old
-          one in {site.name}&apos;s Settings or, for AppSumo purchases, on your license page.
-          {site.name} checks the key with its license server
+          You activate {site.name} with the license key from your purchase email. Each new key
+          activates one, two, or five Macs at a time, according to your plan. Existing keys keep
+          their original activation limit. To move a key to a new Mac, deactivate it on the old
+          one in {site.name}&apos;s Settings. {site.name} checks the key with our payment provider
           from time to time and needs to reach it at least once a month.
         </p>
         <p>
@@ -96,8 +94,7 @@ const sections: DocSection[] = [
         behalf as the merchant of record: it processes your payment, adds any taxes required where
         you live, and its buyer terms also apply to your purchase. If {site.name} isn&apos;t right
         for you, you can ask for a full refund within {site.refundDays} days. See the{" "}
-        <Link href="/refunds">refund policy</Link>. Purchases on AppSumo follow the payment and
-        refund terms shown on your AppSumo order.
+        <Link href="/refunds">refund policy</Link>.
       </p>
     ),
   },
@@ -168,7 +165,7 @@ export default function TermsPage() {
       eyebrow="Terms of service"
       title="The fine print, in plain words."
       intro={`What you agree to when you buy and use ${site.name}.`}
-      updated="September 28, 2026"
+      updated="October 22, 2026"
       sections={sections}
     />
   );
