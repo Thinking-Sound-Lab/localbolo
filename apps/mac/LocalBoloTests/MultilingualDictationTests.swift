@@ -1,4 +1,5 @@
 import Foundation
+import MLXLMCommon
 import Testing
 @testable import LocalBolo
 
@@ -58,6 +59,15 @@ struct MultilingualDictationTests {
 
         let long = [Float](repeating: 0.5, count: Int(3 * AudioRecorder.sampleRate))
         #expect(WhisperBackend.padded(long, beyond: clipTime) == long)
+    }
+
+    @Test func correctionEvaluationStaysHeldOut() throws {
+        struct Case: Decodable { let dictation: String }
+        let file = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "PolishedCorrectionEvaluation.json")
+        let cases = try JSONDecoder().decode([Case].self, from: Data(contentsOf: file))
+        let prompt = PolishedPrompt.messages(for: "", language: .english).map(\.content).joined(separator: "\n")
+        // The evaluation measures generalization only if the prompt never shows its answers.
+        #expect(cases.allSatisfy { !prompt.contains($0.dictation) })
     }
 
     @Test func keepsHindiCombiningMarksInsideWords() {

@@ -14,6 +14,9 @@ struct PolishedTextPolicyTests {
         ("Use https://example.com", "Use https://example.com.", "en"),
         ("The invoice is 250 dollars and we cannot approve it.", "The invoice is $250 and we cannot approve it.", "en"),
         ("Hello. New paragraph. Goodbye.", "Hello.\n\nGoodbye.", "en"),
+        // Filler and stammers may go.
+        ("えーと、明日は会議があります", "明日は会議があります。", "ja"),
+        ("我我我们明天开会", "我们明天开会。", "zh"),
     ])
     func permitsGrammarAndFormatting(original: String, edited: String, language: String) {
         #expect(PolishedTextPolicy.accepts(edited, original: original, language: language))
@@ -38,6 +41,10 @@ struct PolishedTextPolicyTests {
         ("Call Priya tomorrow.", "", "en"),
         ("Read the report and send the invoice to the office tomorrow.", "Read the report.", "en"),
         ("Use https://example.com", "Use https://other.example.com.", "en"),
+        // Drops a place or an object without a correction to explain it.
+        ("明日の朝、会社で会議があります", "明日の朝、会議があります。", "ja"),
+        ("明天在办公室开会", "明天开会。", "zh"),
+        ("कल ऑफिस में मीटिंग है", "कल मीटिंग है।", "hi"),
         // Same words, so a word-level correction check alone would pass these.
         ("Visit https://example.com/a-b.", "Visit https://example.com/a/b.", "en"),
         ("Wire 1,000 dollars.", "Wire 1.000 dollars.", "en"),
@@ -59,6 +66,7 @@ struct PolishedTextPolicyTests {
         ("she have meeting at 9, sorry, at 10", "She has a meeting at 10.", "en"),
         // A correction that opens a sentence takes back the one before.
         ("我们9点见。不对，10点见。", "我们10点见。", "zh"),
+        ("田中さんに、違う、佐藤さんに送ってください", "佐藤さんに送ってください。", "ja"),
         // The period of "p.m." doesn't end the statement being corrected.
         ("कल 5 p.m. बजे, नहीं, 6 p.m. बजे मिलते हैं", "कल 6 p.m. बजे मिलते हैं।", "hi"),
     ])
@@ -73,6 +81,11 @@ struct PolishedTextPolicyTests {
         ("我去，不对，我不去", "我去。", "zh"),
         ("कल 5 बजे, नहीं, 6 बजे मिलते हैं", "कल 5 बजे मिलते हैं।", "hi"),
         ("Pay $250, sorry, $300 for rent.", "Pay $250 for rent.", "en"),
+        // Shares words with the correction, but keeps the withdrawn recipient.
+        ("田中さんに、違う、佐藤さんに送ってください", "田中さんに送ってください。", "ja"),
+        // Drops the correction phrase alone, hiding which version was meant.
+        ("我们周一开会，说错了，周二开会", "我们周一开会。周二开会。", "zh"),
+        ("Send it to Sam, sorry, to Kim", "Send it to Sam. To Kim.", "en"),
         // Drops a fact with no correction to explain it.
         ("明天9点和10点见", "明天10点见。", "zh"),
         ("Pay $20 for lunch and $300 for rent.", "Pay $300 for rent.", "en"),

@@ -76,6 +76,51 @@ Chinese edit: `明天我们要开会请带上电脑` now becomes `明天我们�
 instead of `明天我们要开会。请带上电脑。`. Both pass validation. Mixed Hindi and
 English keeps English punctuation (`… Please send the agenda.`).
 
+## Spoken corrections in Polished mode
+
+The Polished prompt asked the model to apply spoken self-corrections, but it gave
+no examples. On a held-out set of 15 corrections and 9 controls, Qwen 3 1.7B
+applied none. The set is `LocalBoloTests/PolishedCorrectionEvaluation.json`,
+run by `evaluatesSpokenCorrections()`. Corrections span Chinese, Japanese, Hindi,
+mixed Hindi-English and English. Controls use the same words without correcting
+anything, as in "这不是问题", "彼は違う会社に行きました", "मैं नहीं आऊंगा" or "No, I don't
+want coffee". A unit test checks the prompt never contains an evaluation dictation.
+
+A correction is **applied** when only the final version is pasted, **kept** when
+both versions are (safe, but not what was asked), and **lost** when the final
+version is missing. Every variant kept all nine controls intact.
+
+| Prompt | Applied | Lost | Other held-out checks |
+| --- | ---: | ---: | --- |
+| Before (no correction examples) | 0 / 15 | 0 | Pass |
+| A: rule naming cue words, 4 correction examples and 1 control | 5 / 15 | 1 before the policy fix below | Not run |
+| B: A, plus "the words after the phrase replace the words before it" and 2 more examples | 9 / 15 | 0 | "New paragraph" deleted instead of becoming a blank line |
+| C–E: example order and wording changes | 7–9 / 15 | 0 | Same paragraph failure |
+| **F (shipped): B with the examples first, plus a second paragraph example** | **8 / 15** | **0** | **Pass** |
+
+Applied by language in F: Chinese 3 of 4, Japanese 2 of 4, Hindi 2 of 5 (one of
+them mixed with English), English 1 of 2. When the model gets a correction
+wrong, it usually keeps the withdrawn version and drops the final one. Variant A
+showed the policy accepting one such edit, so two rules were added:
+
+- The correction, the rest of its sentence after the cue, must survive word for
+  word. A shared ending such as "さんに" can no longer hide a dropped "佐藤".
+- A correction phrase may only disappear together with what it takes back.
+  Deleting "说错了" while keeping both days hides which was meant.
+
+The new examples also made the model more willing to delete. In the benchmark,
+`明日の朝、会社で会議があります。` lost `会社で`. Chinese, Japanese and Hindi had
+no content-word check like English's, so the policy now rejects an edit that
+drops more than two characters, or more than one word, without writing anything
+in its place. Filler, stammers, formatting cues and taken-back corrections are
+exempt. With that guard, every benchmark output matches the previous prompt.
+
+The longer prompt makes each Polished edit 4–8% slower, 15–35 ms, across
+20 alternating samples per case. Peak MLX memory rose 73 MB, to 1.42 GB. The
+extra prompt is read once when the model loads; a language change still rereads
+only the short hint. English conservative cleanup uses a different prompt and is
+unchanged.
+
 ## Measured and rejected
 
 | Experiment | Result |

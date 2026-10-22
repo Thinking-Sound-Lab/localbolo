@@ -41,7 +41,14 @@ passes checks; changing `$250` to `€250` does not.
   need evaluation with native speakers. The mixed-language editor test starts
   from text, so it does not establish mixed-language recognition quality.
 - Content checks catch obvious changes to numbers, currencies, dates, names,
-  negation and English content words. They do not prove semantic equivalence.
+  negation and English content words, and in other languages, text dropped
+  without a replacement. A spoken correction may remove what the speaker took
+  back, but only if the final version survives. The checks do not prove
+  semantic equivalence.
+- Spoken self-corrections are applied in 8 of the 15 held-out cases in
+  `PolishedCorrectionEvaluation.json`. The other seven are pasted as spoken.
+  None lost the final version, and none of the 9 controls changed meaning. See
+  `dictation-performance.md`.
 - One observed run used about 1.06 GB active MLX memory, a 34 MB reusable buffer
   cache, and 1.35 GB peak MLX memory. These figures exclude Core ML and the rest
   of the application, and are not a guarantee of whole-process memory use.

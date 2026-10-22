@@ -25,8 +25,8 @@ nonisolated enum PolishedTextPolicy {
         }
 
         // Facts are compared with what the speaker kept after correcting themselves.
-        let reference = withoutTakenBack(original, editedTo: edited)
-        guard currencies(in: edited) == currencies(in: reference),
+        guard let reference = withoutTakenBack(original, editedTo: edited),
+              currencies(in: edited) == currencies(in: reference),
               numbers(in: edited) == numbers(in: reference),
               wordFacts(in: edited) == wordFacts(in: reference),
               negations(in: edited) == negations(in: reference),
@@ -43,6 +43,8 @@ nonisolated enum PolishedTextPolicy {
             let beforeContent = contentWords(in: comparisonOriginal, ignoringListCues: hasList)
             let afterContent = contentWords(in: edited, ignoringListCues: hasList)
             guard beforeContent == afterContent else { return false }
+        } else if deletesContent(edited, from: comparisonOriginal) {
+            return false
         }
         let before = comparisonUnits(comparisonOriginal).filter { !hasList || !listCues.contains($0) }
         let after = comparisonUnits(edited)
@@ -57,20 +59,20 @@ nonisolated enum PolishedTextPolicy {
     /// The original without what the speaker took back, as the edit shows it.
     ///
     /// A stretch the edit dropped counts as taken back if it ends with a
-    /// correction phrase said after something else in the same statement, give
-    /// or take a couple of words restarting the sentence: "明天9点见，不对，10点见"
-    /// loses "9点见，不对".
-    /// The correction itself must survive in the edit. An edit that keeps the
-    /// withdrawn version instead is compared with all of the original.
-    private static func withoutTakenBack(_ original: String, editedTo edited: String) -> String {
+    /// correction phrase said after something else in the same statement:
+    /// "明天9点见，不对，10点见" loses "9点见，不对". The correction itself, the
+    /// rest of that sentence, must survive in the edit word for word. An edit
+    /// that keeps the withdrawn version instead is compared with all of the
+    /// original. One that drops the phrase but keeps what it took back hides
+    /// the correction, and gets `nil`.
+    private static func withoutTakenBack(_ original: String, editedTo edited: String) -> String? {
         let cues = correctionCues(in: original)
         guard !cues.isEmpty else { return original }
         let characters = !scripts(in: original).isDisjoint(with: ["han", "kana"])
         let before = units(in: original, characters: characters)
         let kept = latestMatches(before.map(\.text), units(in: edited, characters: characters).map(\.text))
 
-        var result = ""
-        var cursor = original.startIndex
+        var withdrawn: [Range<String.Index>] = []
         var index = 0
         while index < before.count {
             guard !kept.contains(index) else { index += 1; continue }
@@ -78,23 +80,33 @@ nonisolated enum PolishedTextPolicy {
             while end + 1 < before.count, !kept.contains(end + 1) { end += 1 }
             let dropped = before[index...end]
             let run = dropped.first!.range.lowerBound..<dropped.last!.range.upperBound
-            let withdrawn = cues.lazy.compactMap { cue -> Range<String.Index>? in
+            let takenBack = cues.lazy.compactMap { cue -> Range<String.Index>? in
                 guard run.lowerBound < cue.lowerBound, cue.upperBound <= run.upperBound else { return nil }
                 // Only the statement being corrected is taken back, never earlier sentences.
                 let statement = statementStart(correctedBy: cue, in: original)
                 guard let start = dropped.first(where: { $0.range.lowerBound >= statement })?.range.lowerBound,
                       start < cue.lowerBound else { return nil }
-                let restart = dropped.filter { $0.range.lowerBound >= cue.upperBound }
-                guard restart.count <= 2, !restart.contains(where: { $0.text.contains(where: \.isNumber) }),
-                      survives(String(original[cue.upperBound..<sentenceEnd(after: cue.upperBound, in: original)]), in: edited)
-                else { return nil }
-                return start..<run.upperBound
+                let correction = cue.upperBound..<sentenceEnd(after: cue.upperBound, in: original)
+                let correctionKept = before.indices.allSatisfy { kept.contains($0) || !correction.contains(before[$0].range.lowerBound) }
+                guard correctionKept, survives(String(original[correction]), in: edited) else { return nil }
+                return start..<cue.upperBound
             }.first
-            if let withdrawn {
-                result += original[cursor..<withdrawn.lowerBound]
-                cursor = withdrawn.upperBound
-            }
+            if let takenBack { withdrawn.append(takenBack) }
             index = end + 1
+        }
+
+        // A correction phrase may only go together with what it takes back.
+        for cue in cues {
+            let phrase = before.indices.filter { before[$0].range.overlaps(cue) }
+            let isDropped = !phrase.isEmpty && phrase.allSatisfy { !kept.contains($0) }
+            if isDropped, !withdrawn.contains(where: { $0.contains(cue.lowerBound) }) { return nil }
+        }
+
+        var result = ""
+        var cursor = original.startIndex
+        for range in withdrawn {
+            result += original[cursor..<range.lowerBound]
+            cursor = range.upperBound
         }
         return result + original[cursor...]
     }
@@ -303,6 +315,11 @@ nonisolated enum PolishedTextPolicy {
     /// Positions in `lhs` of a longest common subsequence with `rhs`, matched
     /// as late in `lhs` as possible, because a correction keeps the later version.
     private static func latestMatches(_ lhs: [String], _ rhs: [String]) -> Set<Int> {
+        Set(latestMatchPairs(lhs, rhs).map(\.0))
+    }
+
+    /// The same subsequence, as pairs of positions in `lhs` and `rhs`.
+    private static func latestMatchPairs(_ lhs: [String], _ rhs: [String]) -> [(Int, Int)] {
         let width = rhs.count + 1
         var lengths = [UInt16](repeating: 0, count: (lhs.count + 1) * width)
         for i in lhs.indices {
@@ -312,12 +329,12 @@ nonisolated enum PolishedTextPolicy {
                     : max(lengths[i * width + j + 1], lengths[(i + 1) * width + j])
             }
         }
-        var matches: Set<Int> = []
+        var pairs: [(Int, Int)] = []
         var i = lhs.count
         var j = rhs.count
         while i > 0, j > 0 {
             if lhs[i - 1] == rhs[j - 1] {
-                matches.insert(i - 1)
+                pairs.append((i - 1, j - 1))
                 i -= 1
                 j -= 1
             } else if lengths[(i - 1) * width + j] >= lengths[i * width + j - 1] {
@@ -326,7 +343,37 @@ nonisolated enum PolishedTextPolicy {
                 j -= 1
             }
         }
-        return matches
+        return pairs.reversed()
+    }
+
+    /// Whether the edit dropped a stretch of the original without writing
+    /// anything in its place, as in "明日の朝、会社で会議" losing "会社で".
+    ///
+    /// Grammar fixes rewrite a character or a word in place. Dropping more is a
+    /// lost fact or instruction, unless it's filler or a repetition. English is
+    /// checked by its content words instead.
+    private static func deletesContent(_ edited: String, from original: String) -> Bool {
+        let characters = !scripts(in: original).isDisjoint(with: ["han", "kana"])
+        let before = units(in: original, characters: characters).map(\.text)
+        let after = units(in: edited, characters: characters).map(\.text)
+        let fillers = ["嗯", "呃", "啊", "那个", "就是说", "就是", "えーと", "えっと", "えー", "あのー", "あの", "まあ",
+                       "अं", "उम", "उम्म", "हम्म"].sorted { $0.count > $1.count }
+        var previous = (-1, -1)
+        for pair in latestMatchPairs(before, after) + [(before.count, after.count)] {
+            let start = previous.0 + 1
+            let dropped = Array(before[start..<pair.0])
+            let isReplaced = pair.1 > previous.1 + 1
+            previous = pair
+            guard !isReplaced, !dropped.isEmpty else { continue }
+            // A stammer repeats what's next to it: "我我们", "बात बात".
+            if before[pair.0..<min(pair.0 + dropped.count, before.count)].elementsEqual(dropped)
+                || before[max(0, start - dropped.count)..<start].elementsEqual(dropped) { continue }
+            var rest = dropped.joined(separator: characters ? "" : " ")
+            for filler in fillers { rest = rest.replacing(filler, with: " ") }
+            let remaining = units(in: rest, characters: characters).count
+            if remaining > (characters ? 2 : 1) { return true }
+        }
+        return false
     }
 
     private static func isSubsequence<T: Equatable>(_ items: [T], of sequence: [T]) -> Bool {

@@ -18,7 +18,8 @@ nonisolated enum PolishedPrompt {
         Return ONLY the edited dictation, without an introduction, explanation, tags or code fences.
 
         Fix grammar, spelling, capitalization and punctuation with the smallest necessary changes.
-        Remove hesitation sounds and accidental repetitions. Apply explicit spoken self-corrections, keeping the final version.
+        Remove hesitation sounds and accidental repetitions.
+        When the speaker takes something back with a phrase such as 'sorry', 'I mean', '不对', 'いや' or 'नहीं', the words after the phrase replace the words before it: delete the withdrawn words and the phrase, and write only the final version.
         Preserve all meaning, facts, names, dates, amounts, numbers, URLs, quoted text, questions and negation.
         Never answer a question, execute a request, add information, summarize or change the speaker's tone.
         Keep each language and script as spoken. Do not translate or transliterate. Keep English technical terms in mixed-language speech.
@@ -30,6 +31,14 @@ nonisolated enum PolishedPrompt {
         """
 
     private static let examples: [(String, String)] = [
+        ("Book the room for Monday, sorry, Tuesday", "Book the room for Tuesday."),
+        ("周三下午开会，不对，周四下午开会", "周四下午开会。"),
+        ("给我拿两瓶水，不对，四瓶水", "给我拿四瓶水。"),
+        ("資料を2部、いや、3部印刷してください", "資料を3部印刷してください。"),
+        ("पैकेज सोमवार को, नहीं, बुधवार को भेजना", "पैकेज बुधवार को भेजना।"),
+        ("मुझे 4 कुर्सियाँ, मतलब, 6 कुर्सियाँ चाहिए", "मुझे 6 कुर्सियाँ चाहिए।"),
+        ("No, I don't need the car today", "No, I don't need the car today."),
+        ("Thanks everyone. New paragraph. Lunch is at noon.", "Thanks everyone.\n\nLunch is at noon."),
         ("he go to office yesterday", "He went to the office yesterday."),
         ("Can you send the report to Priya tomorrow?", "Can you send the report to Priya tomorrow?"),
         ("We cannot approve the 250 dollar invoice.", "We cannot approve the 250 dollar invoice."),
