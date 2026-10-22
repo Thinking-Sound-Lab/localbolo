@@ -6,6 +6,13 @@
  */
 export const releases: { version: string; date: string; changes: string[] }[] = [
   {
+    version: "0.5.1",
+    date: "October 23, 2026",
+    changes: [
+      "Clearer directions for finding your license key and moving it to another Mac.",
+    ],
+  },
+  {
     version: "0.5.0",
     date: "October 22, 2026",
     changes: [
