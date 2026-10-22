@@ -3,11 +3,6 @@ import { describe, test } from "node:test";
 import { withoutPaymentDetails } from "./analytics.ts";
 
 describe("withoutPaymentDetails", () => {
-  test("never sends AppSumo page views, OAuth codes, or license sessions", () => {
-    for (const path of ["/appsumo", "/appsumo/callback?code=secret", "/appsumo?error=pending"]) {
-      assert.equal(withoutPaymentDetails({ type: "pageview", url: `https://localbolo.app${path}` }), null);
-    }
-  });
   test("drops the payment ID from the purchase page", () => {
     const event = withoutPaymentDetails({
       type: "pageview",

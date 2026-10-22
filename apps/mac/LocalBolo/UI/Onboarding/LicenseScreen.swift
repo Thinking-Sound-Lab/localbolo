@@ -32,7 +32,7 @@ struct LicenseScreen: View {
         VStack(spacing: 24) {
             Heading(
                 title: "Welcome to LocalBolo",
-                message: "Enter the key from your purchase email or LocalBolo's AppSumo activation page. You only need to do this once on each Mac."
+                message: "Enter the license key from the email Dodo Payments sent you after you bought LocalBolo. You only need to do this once on each Mac."
             )
 
             VStack(spacing: 12) {
@@ -66,7 +66,7 @@ struct LicenseScreen: View {
         VStack(spacing: 24) {
             Heading(
                 title: "Check your license",
-                message: "LocalBolo needs to check your license. It does this at least once a month, and again if your Mac's clock is turned back. Connect to the internet, then try again."
+                message: "LocalBolo needs to check your license with Dodo Payments. It does this at least once a month, and again if your Mac's clock is turned back. Connect to the internet, then try again."
             )
 
             VStack(spacing: 12) {

@@ -19,10 +19,8 @@ export const releases: { version: string; date: string; changes: string[] }[] = 
     version: "0.4.0",
     date: "October 22, 2026",
     changes: [
-      "Works with keys bought on AppSumo. Enter the key from your AppSumo license page, the same way as any other key.",
-      "With an AppSumo key, Settings › License has a Manage your Macs link. It leads to your AppSumo license page, where you can see which Macs use your key and remove one to make room for another.",
       "Keys now come in plans for 1, 2 or 5 Macs. Keys you already have keep working on as many Macs as before.",
-      "The Lost your key? link in Settings › License now explains where to find your key, whether you bought LocalBolo on our website or on AppSumo.",
+      "The Lost your key? link in Settings › License now explains how to find your key.",
     ],
   },
   {

@@ -107,11 +107,10 @@ const sections: DocSection[] = [
           </li>
           <li>
             <strong>Your license.</strong> When you enter your license key, the app activates it with
-            Dodo Payments for direct purchases, or LocalBolo&apos;s license server for AppSumo
-            purchases. It sends the key, your Mac&apos;s name, and an anonymous ID made from a
+            Dodo Payments. It sends the key, your Mac&apos;s name, and an anonymous ID made from a
             one-way hash of your Mac&apos;s hardware ID, so a license stays tied to the Macs you
             activate. The hardware ID itself never leaves your Mac. Every two weeks, when
-            you&apos;re online, the app checks with the license server that the key is still valid. If it
+            you&apos;re online, the app checks with Dodo that the key is still valid. If it
             can&apos;t check for a month, it asks you to connect once before dictating again.
           </li>
           <li>
@@ -128,9 +127,8 @@ const sections: DocSection[] = [
     id: "website",
     title: "This website",
     content: (
-      <>
       <p>
-        This website has no advertising trackers. It counts public-page visits with Vercel
+        This website sets no cookies and has no advertising trackers. It counts visits with Vercel
         Web Analytics, which is anonymous: for each page view it records the page, the site you came
         from, your country, and your browser, operating system and type of device, never your IP
         address or anything that identifies you, and it forgets visitors after 24 hours. Fonts are
@@ -138,13 +136,6 @@ const sections: DocSection[] = [
         standard server logs, such as IP addresses and browser types, to deliver the site and
         protect it from abuse.
       </p>
-      <p>
-        AppSumo activation uses encrypted, essential cookies: one lasts up to five minutes to
-        complete activation, and another lasts up to 30 minutes to show your key and manage your
-        Macs. These pages are excluded from analytics. We briefly keep a one-way representation
-        of your IP address to limit repeated requests to the license service.
-      </p>
-      </>
     ),
   },
   {
@@ -168,12 +159,6 @@ const sections: DocSection[] = [
           We keep a record of each purchase: your name, email address and country, what you paid,
           whether it was refunded, and an ID for your license key (not the key itself). It&apos;s
           stored with Supabase, our database provider, and only we can see it.
-        </p>
-        <p>
-          For AppSumo purchases, AppSumo handles checkout and refunds. We store the AppSumo
-          license IDs and their history, tier and status, your LocalBolo activation key, and your
-          activated Macs&apos; names and anonymous IDs in Supabase to deliver and support your
-          license. AppSumo does not provide your email through this licensing connection.
         </p>
       </>
     ),
@@ -248,7 +233,7 @@ export default function PrivacyPage() {
         </>
       }
       intro={`${site.name} is built so that there is nothing to collect. Here is exactly what the app and this website do with your data.`}
-      updated="October 21, 2026"
+      updated="October 22, 2026"
       sections={sections}
     />
   );

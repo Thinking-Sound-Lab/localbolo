@@ -98,8 +98,7 @@ which run on the server:
 1. In **test mode**, run `pnpm dodo:plans --execute` with a test Dodo API key and mode
    loaded. It creates/reuses three license entitlements and products: one key for
    1 Mac/$49, 2 Macs/$99, or 5 Macs/$299. The website displays original prices of
-   $69/$159/$399. Set the three product IDs it prints; see
-   [license plans and the 10,000-code CSV exporter](docs/appsumo-codes.md).
+   $69/$159/$399. Set the three product IDs it prints.
 2. Create an API key, and a webhook pointing at `https://<your domain>/api/webhooks/dodo` with
    `payment.succeeded`, `refund.succeeded`, `license_key.created` and every `dispute.` event.
 3. Copy `.env.local.example` to `.env.local` and fill in the API key, product IDs, business ID and
@@ -143,11 +142,6 @@ npx supabase db push
 ```
 
 ## Deploying
-
-AppSumo purchases use a separate licensing service, OAuth activation page and
-Mac-management flow. See [AppSumo licensing](docs/appsumo-licensing.md) for the
-migration, server credentials, URL validation, compatible Mac release and checks.
-The three-tier AppSumo deal does not need a redemption-code CSV.
 
 The site runs on [Vercel](https://vercel.com), in the `localbolo` project of the Thinking Sound
 Lab team, connected to this repository:

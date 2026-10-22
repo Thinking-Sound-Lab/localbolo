@@ -20,8 +20,10 @@ export async function GET(request: Request) {
   try {
     const checkoutUrl = await createPlanCheckout(dodo, plan, productId, request.url);
     return Response.redirect(checkoutUrl, 303);
-  } catch {
-    console.error(`Couldn't create a matching Dodo checkout for the ${plan.id} plan.`);
+  } catch (error) {
+    // The reason is a catalog mismatch or Dodo's API error, never a secret.
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`Couldn't create a matching Dodo checkout for the ${plan.id} plan: ${reason}`);
     return redirectToOutcome(request, "unavailable");
   }
 }
