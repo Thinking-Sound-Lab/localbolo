@@ -37,6 +37,8 @@ final class LocalModelStore<Loader: ModelLoader> {
     @ObservationIgnored private let loader: Loader
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let activeModelKey: String
+    @ObservationIgnored private var activationTask: Task<Void, Never>?
+    private var wantsLoaded = true
 
     init(loader: Loader, activeModelKey: String, defaults: UserDefaults = .standard) {
         self.loader = loader
@@ -73,18 +75,27 @@ final class LocalModelStore<Loader: ModelLoader> {
 
     /// Downloads `model` if needed, loads it, and makes it the active model.
     func use(_ model: Model) {
-        Task { await activate(model) }
+        wantsLoaded = true
+        guard !isBusy else { return }
+        activationTask?.cancel()
+        activationTask = Task {
+            guard !Task.isCancelled, wantsLoaded else { return }
+            await activate(model)
+            activationTask = nil
+        }
     }
 
     /// Like `use(_:)`, but waits until the model is ready (or has failed).
     func activate(_ model: Model) async {
-        guard !isBusy, status(of: model) != .ready else { return }
+        guard !Task.isCancelled, !isBusy, status(of: model) != .ready else { return }
+        wantsLoaded = true
         await download(andLoad: model)
     }
 
     /// Frees the memory held by the active model. It stays on disk.
     func unload() {
-        guard !isBusy else { return }
+        wantsLoaded = false
+        if !isBusy { activationTask?.cancel() }
         loaded = nil
     }
 
@@ -116,7 +127,7 @@ final class LocalModelStore<Loader: ModelLoader> {
             let loadStarted = ContinuousClock.now
             let loadedModel = try await loader.load(model)
 
-            loaded = loadedModel
+            loaded = wantsLoaded && !Task.isCancelled ? loadedModel : nil
             activeModel = model
             defaults.set(model.rawValue, forKey: activeModelKey)
             Logger.models.info("Loaded \(model.rawValue, privacy: .public) in \(ContinuousClock.now - loadStarted, privacy: .public)")

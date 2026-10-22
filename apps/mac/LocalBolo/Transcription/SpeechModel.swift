@@ -1,7 +1,7 @@
 /// The on-device speech models LocalBolo can download and run.
 ///
-/// All of them run on Apple Silicon's Neural Engine via Core ML and are tuned
-/// for (or restricted to) English.
+/// All run on Apple Silicon's Neural Engine via Core ML. Whisper Turbo also
+/// supports multilingual dictation; the smaller models are English-only.
 nonisolated enum SpeechModel: String, LocalModel {
     case parakeetV2 = "parakeet-tdt-0.6b-v2"
     case whisperBaseEnglish = "openai_whisper-base.en"
@@ -9,6 +9,14 @@ nonisolated enum SpeechModel: String, LocalModel {
     case whisperLargeV3Turbo = "openai_whisper-large-v3-v20240930_626MB"
 
     static let recommended = SpeechModel.parakeetV2
+
+    static func recommended(for language: SpeechLanguage) -> SpeechModel {
+        language == .english ? .parakeetV2 : .whisperLargeV3Turbo
+    }
+
+    func supports(_ language: SpeechLanguage) -> Bool {
+        language == .english || self == .whisperLargeV3Turbo
+    }
 
     enum Engine: Sendable {
         /// NVIDIA Parakeet, run with FluidAudio.
@@ -47,7 +55,7 @@ nonisolated enum SpeechModel: String, LocalModel {
         case .parakeetV2: "Best for English. Very fast and highly accurate."
         case .whisperBaseEnglish: "Smallest download. Good for quick notes."
         case .whisperSmallEnglish: "A balance of speed and accuracy."
-        case .whisperLargeV3Turbo: "Most accurate Whisper. Slower on older Macs."
+        case .whisperLargeV3Turbo: "Multilingual dictation, including Chinese, Hindi and Japanese."
         }
     }
 

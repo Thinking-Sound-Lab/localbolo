@@ -58,13 +58,15 @@ private actor ParakeetTranscriber: Transcriber {
         self.manager = manager
     }
 
-    func transcribe(_ samples: [Float]) async throws -> String {
+    func transcribe(_ samples: [Float], language: SpeechLanguage) async throws -> SpeechTranscript {
+        guard language == .english else { throw TranscriptionError.unsupportedLanguage }
         var audio = samples
         if audio.count < Self.minimumSampleCount {
             audio.append(contentsOf: repeatElement(0, count: Self.minimumSampleCount - audio.count))
         }
 
         var decoderState = TdtDecoderState.make(decoderLayers: await manager.decoderLayerCount)
-        return try await manager.transcribe(audio, decoderState: &decoderState).text
+        let text = try await manager.transcribe(audio, decoderState: &decoderState).text
+        return SpeechTranscript(text: text, language: "en")
     }
 }

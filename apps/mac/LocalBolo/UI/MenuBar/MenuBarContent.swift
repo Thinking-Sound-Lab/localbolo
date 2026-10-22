@@ -8,6 +8,7 @@ struct MenuBarContent: View {
 
     var body: some View {
         @Bindable var cleanup = model.cleanup
+        @Bindable var model = model
 
         #if DEBUG
         // Both builds can run side by side, so make the development one obvious.
@@ -18,6 +19,21 @@ struct MenuBarContent: View {
         Divider()
 
         Toggle("Clean Up Transcripts", isOn: $cleanup.isEnabled)
+            .disabled(model.dictation.isDictating)
+
+        Picker("Language", selection: $model.speechLanguage) {
+            ForEach(SpeechLanguage.allCases) { language in
+                Text(language.displayName).tag(language)
+            }
+        }
+        .disabled(model.dictation.isDictating || model.speechModels.isBusy)
+
+        Picker("Output Style", selection: $cleanup.style) {
+            ForEach(CleanupStyle.allCases) { style in
+                Text(style.displayName).tag(style)
+            }
+        }
+        .disabled(cleanup.models.isBusy || model.dictation.isDictating)
 
         Button("Copy Last Transcript") {
             guard let transcript = model.dictation.lastTranscript else { return }
@@ -66,6 +82,10 @@ struct MenuBarContent: View {
         case .needsVerification: return "Connect to the internet to verify your license"
         }
         guard model.permissions.allGranted else { return "Finish setup to start dictating" }
+        guard model.speechModels.activeModel.supports(model.speechLanguage) else {
+            return model.speechModels.isBusy ? "Preparing multilingual speech model…" : "Select Whisper Turbo in Settings"
+        }
+        if let message = model.cleanup.readinessMessage(for: model.settings.dictationPreferences) { return message }
 
         return switch model.speechModels.status(of: model.speechModels.activeModel) {
         case .ready: "Hold fn to dictate"

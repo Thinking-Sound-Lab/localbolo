@@ -38,6 +38,8 @@ private struct GeneralSettingsView: View {
                 Toggle("Restore clipboard after pasting", isOn: $settings.restoresClipboard)
             }
 
+            SpeechLanguageSection()
+
             Section("Permissions") {
                 PermissionRow(title: "Microphone", isGranted: app.permissions.microphone == .granted, actionTitle: "Allow") {
                     Task { await app.permissions.requestMicrophone() }
@@ -180,16 +182,45 @@ private struct ModelsSettingsView: View {
 
     var body: some View {
         Form {
+            SpeechLanguageSection()
+
             Section {
                 ForEach(SpeechModel.allCases) { model in
-                    ModelRow(store: app.speechModels, model: model)
+                    ModelRow(store: app.speechModels, model: model,
+                             recommendedModel: .recommended(for: app.speechLanguage), isCompatible: model.supports(app.speechLanguage))
+                        .disabled(app.dictation.isDictating)
                 }
             } footer: {
-                ModelStorageFooter(text: "Speech models run entirely on this Mac using the Neural Engine.")
+                ModelStorageFooter(text: "Speech models run entirely on this Mac using the Neural Engine. Parakeet, Whisper Base and Whisper Small support English only.")
             }
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct SpeechLanguageSection: View {
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        @Bindable var app = app
+
+        Section {
+            Picker("Language", selection: $app.speechLanguage) {
+                ForEach(SpeechLanguage.allCases) { language in
+                    Text(language.displayName).tag(language)
+                }
+            }
+            .disabled(app.dictation.isDictating || app.speechModels.isBusy)
+
+            if !app.speechModels.activeModel.supports(app.speechLanguage) {
+                LabeledContent("Whisper Turbo · 630 MB") {
+                    ModelActionView(store: app.speechModels, model: .whisperLargeV3Turbo)
+                }
+            }
+        } footer: {
+            Text("Chinese, Hindi, Japanese and automatic detection use Whisper Turbo. Choose Polished in Cleanup for grammar and formatting. Mixed-language accuracy varies.")
+        }
     }
 }
 
@@ -203,20 +234,33 @@ private struct CleanupSettingsView: View {
             Section {
                 Toggle(isOn: $cleanup.isEnabled) {
                     Text("Clean up transcripts")
-                    Text("Applies your corrections and removes filler words. “Let’s meet at 9 p.m., sorry, 10 p.m.” becomes “Let’s meet at 10 p.m.”")
+                    Text("Choose conservative English cleanup or multilingual grammar and formatting.")
                 }
+                .disabled(app.dictation.isDictating)
+
+                Picker("Output style", selection: $cleanup.style) {
+                    ForEach(CleanupStyle.allCases) { style in
+                        Text(style.displayName).tag(style)
+                    }
+                }
+                .disabled(cleanup.models.isBusy || app.dictation.isDictating)
+                Text(cleanup.style.summary)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Model") {
                 ForEach(CleanupModel.allCases) { model in
-                    ModelRow(store: cleanup.models, model: model)
+                    ModelRow(store: cleanup.models, model: model,
+                             recommendedModel: .recommended(for: cleanup.style), isCompatible: model.supports(cleanup.style))
+                        .disabled(app.dictation.isDictating)
                 }
             }
             .disabled(!cleanup.isEnabled)
 
             Section {
             } footer: {
-                ModelStorageFooter(text: "Filler sounds and doubled words are removed instantly. A small language model on this Mac’s GPU applies your corrections, and it only reads the sentences that have one.")
+                ModelStorageFooter(text: "Cleanup stays on this Mac. Polished edits each passage and can take longer. If an edit fails checks for changed content, the original passage is pasted.")
             }
         }
         .formStyle(.grouped)

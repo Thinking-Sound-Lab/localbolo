@@ -20,6 +20,22 @@ final class AppSettings {
         didSet { defaults.set(cleansUpTranscripts, forKey: Key.cleansUpTranscripts) }
     }
 
+    var speechLanguage: SpeechLanguage {
+        didSet { defaults.set(speechLanguage.rawValue, forKey: Key.speechLanguage) }
+    }
+
+    var cleanupStyle: CleanupStyle {
+        didSet { defaults.set(cleanupStyle.rawValue, forKey: Key.cleanupStyle) }
+    }
+
+    var dictationPreferences: DictationPreferences {
+        DictationPreferences(
+            language: speechLanguage,
+            cleanupEnabled: cleansUpTranscripts,
+            cleanupStyle: cleanupStyle
+        )
+    }
+
     @ObservationIgnored private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -31,11 +47,15 @@ final class AppSettings {
         showsIdlePill = defaults.bool(forKey: Key.showsIdlePill)
         restoresClipboard = defaults.bool(forKey: Key.restoresClipboard)
         cleansUpTranscripts = defaults.bool(forKey: Key.cleansUpTranscripts)
+        speechLanguage = defaults.string(forKey: Key.speechLanguage).flatMap(SpeechLanguage.init) ?? .english
+        cleanupStyle = defaults.string(forKey: Key.cleanupStyle).flatMap(CleanupStyle.init) ?? .conservative
     }
 
     private enum Key {
         static let showsIdlePill = "showsIdlePill"
         static let restoresClipboard = "restoresClipboard"
         static let cleansUpTranscripts = "cleansUpTranscripts"
+        static let speechLanguage = "speechLanguage"
+        static let cleanupStyle = "cleanupStyle"
     }
 }

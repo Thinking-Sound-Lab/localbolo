@@ -6,6 +6,16 @@
  */
 export const releases: { version: string; date: string; changes: string[] }[] = [
   {
+    version: "0.5.0",
+    date: "October 22, 2026",
+    changes: [
+      "Dictate in Chinese (Mandarin), Hindi or Japanese, or let LocalBolo detect the language. Choose one in Settings › General › Language. These languages use Whisper Turbo, a 630 MB download. English keeps your current speech model.",
+      "A new Polished style in Settings › Cleanup › Output style fixes grammar and punctuation and adds paragraphs or lists, in all four languages. It keeps your meaning and your languages, so a mix of Hindi and English stays mixed. It uses Qwen 3 1.7B, about a 990 MB download.",
+      "Polished applies corrections you make as you speak, such as “sorry”, “不对”, “いや” or “नहीं”, and keeps only what you meant. If an edit would change a number, a name, a link or what you said, LocalBolo pastes your words as you spoke them instead.",
+      "With a Whisper model, dictations of a second or less, such as “OK” or “はい”, are no longer dropped, and your text appears sooner when you haven't dictated for a while.",
+    ],
+  },
+  {
     version: "0.4.0",
     date: "October 22, 2026",
     changes: [

@@ -37,6 +37,10 @@ no internet connection is needed once the license is activated and the models ar
   applies your self-corrections: *"let's meet at 9 p.m., sorry, 10 p.m."* becomes *"Let's meet at 10 p.m."*
 - **Clipboard-safe.** Text is pasted through the clipboard, which is then restored.
 - **Choose your models.** Parakeet by default, or OpenAI Whisper in three sizes.
+- **Dictate in English, Chinese, Hindi or Japanese.** Choose a language or automatic detection
+  in Settings. Non-English dictation uses Whisper Turbo, entirely on your Mac.
+- **Polish your writing (optional).** Fix grammar and punctuation and add paragraphs or lists
+  with a local multilingual model. Keep conservative English cleanup when you prefer minimal edits.
 
 ## Screenshots
 
@@ -54,12 +58,12 @@ no internet connection is needed once the license is activated and the models ar
 | --- | --- |
 | **Chip** | Apple Silicon (M1 or newer). Intel Macs aren't supported: Parakeet and MLX only run on Apple Silicon, and the app is built for `arm64` only. |
 | **macOS** | 15 Sequoia or later |
-| **Memory** | 8 GB or more. The app uses about 1.1 GB with transcript cleanup on. |
+| **Memory** | 8 GB or more. Usage depends on the selected speech and cleanup models. |
 | **Disk** | About 60 MB for the app, plus models: Parakeet ~450 MB, and optionally the cleanup model ~840 MB |
 | **Keyboard** | One whose fn / 🌐 key macOS can see, such as a MacBook keyboard or an Apple Magic Keyboard. Many third-party keyboards handle Fn internally and never report it. |
 | **Permissions** | Microphone (to record while fn is held) and Accessibility (to see fn from any app and paste with ⌘V) |
 | **Network** | To activate the license key and download models the first time; afterwards only for daily update checks and a license re-check about every two weeks |
-| **Language** | English |
+| **Language** | English, Mandarin Chinese, Hindi and Japanese; automatic language detection with Whisper Turbo |
 
 ## Getting started
 
@@ -95,8 +99,9 @@ optimized for your Mac's Neural Engine. After that the app is ready in about 2 s
 
 ### Transcript cleanup
 
-Turn it on in **Settings › Cleanup** or from the menu bar. It downloads Qwen 2.5 1.5B (about
-840 MB) and runs it on the GPU with MLX:
+Turn it on in **Settings › Cleanup** or from the menu bar. Existing settings keep the
+**Conservative (English)** style, which downloads Qwen 2.5 1.5B (about 880 MB) and runs on
+the GPU with MLX:
 
 - **Rules first.** "Um", "uh" and accidentally doubled words ("the the", "can you can you") are
   removed by plain rules, which take no time and can't change what you said.
@@ -109,6 +114,22 @@ Turn it on in **Settings › Cleanup** or from the menu bar. It downloads Qwen 2
   back may go, and nothing new may appear. Otherwise (for example if the model answers a question
   you dictated) that sentence is pasted as you said it.
 
+Choose **Polished** to fix grammar, spelling and punctuation, remove fillers and apply spoken
+corrections throughout the dictation. It uses Qwen 3 1.7B (about 990 MB) and can add paragraphs
+and plain-text lists. The prompt asks it to preserve meaning, names, numbers and each language
+in mixed-language speech, without translating or answering questions. Checks reject obvious
+content changes; failed or unfinished edits fall back to the original passage. These checks
+cannot prove that every edit preserves meaning.
+
+In **Settings › General › Language**, select English, Chinese (Mandarin), Hindi, Japanese or
+automatic detection. Download/select **Whisper Turbo** when prompted for a non-English language.
+Conservative cleanup passes non-English transcripts through unchanged; use Polished for
+multilingual editing. Dictation waits until the requested speech and polishing models are ready.
+
+Polished mode edits more text than conservative cleanup, so it can take longer. Long dictations
+are edited in bounded passages to limit temporary memory. Quality and latency vary by language,
+accent, mixed-language speech and Mac; synthesized-speech tests are not native-speaker validation.
+
 ## Models
 
 All models are downloaded from Hugging Face into `~/Library/Application Support/LocalBolo/Models`
@@ -119,12 +140,13 @@ and can be switched or deleted in Settings.
 | **Parakeet v2** (default) | [FluidAudio](https://github.com/FluidInference/FluidAudio), Neural Engine | 470 MB | English-only, fastest and most accurate |
 | Whisper Base | [WhisperKit](https://github.com/argmaxinc/argmax-oss-swift), Neural Engine | 150 MB | English-only, smallest |
 | Whisper Small | WhisperKit | 220 MB | English-only |
-| Whisper Large v3 Turbo | WhisperKit | 630 MB | Most accurate Whisper, forced to English |
+| Whisper Large v3 Turbo | WhisperKit | 630 MB | Multilingual; selected language or automatic detection |
 
 | Cleanup model | Runs with | Download | Notes |
 | --- | --- | --- | --- |
 | **Qwen 2.5 1.5B Instruct** (default) | [MLX](https://github.com/ml-explore/mlx-swift-lm), GPU | 880 MB | Most reliable at applying corrections |
 | Qwen 3 0.6B | MLX, GPU | 350 MB | Half the memory, but misses more corrections |
+| Qwen 3 1.7B | MLX, GPU | 990 MB | Used by multilingual Polished mode |
 
 ## How it works
 
@@ -224,6 +246,17 @@ TEST_RUNNER_LOCALBOLO_INTEGRATION=1 xcodebuild test -scheme "LocalBolo Dev" \
   -destination 'platform=macOS' -skipPackagePluginValidation \
   -only-testing:LocalBoloTests/TranscriptionIntegrationTests \
   -only-testing:LocalBoloTests/CleanupIntegrationTests
+```
+
+The multilingual integration suite downloads Whisper Turbo and Qwen 3 1.7B (about 1.6 GB).
+It checks Mandarin, Hindi and Japanese recognition using the system voices, automatic detection,
+and held-out multilingual grammar edits. Run it separately from other model suites on an 8 GB Mac:
+
+```sh
+TEST_RUNNER_LOCALBOLO_MULTILINGUAL_INTEGRATION=1 xcodebuild test \
+  -project LocalBolo.xcodeproj -scheme "LocalBolo Dev" \
+  -destination 'platform=macOS,arch=arm64' -skipPackagePluginValidation \
+  -only-testing:LocalBoloTests/MultilingualIntegrationTests
 ```
 
 ### Website

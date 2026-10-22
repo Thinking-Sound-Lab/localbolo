@@ -2,91 +2,81 @@ import Foundation
 import Observation
 import os
 
-/// The optional cleanup step. It removes filler sounds and doubled words with
-/// plain rules, and applies self-corrections ("at 9, sorry, at 10" becomes
-/// "at 10") using a small language model running on this Mac.
+/// Optional conservative cleanup or multilingual grammar and formatting.
 @Observable
 final class TranscriptCleanup {
     let models: CleanupModelStore
     @ObservationIgnored private let settings: AppSettings
+    /// What Auto last detected. The next dictation is most likely the same
+    /// language, so warming up for it keeps switching off the critical path.
+    @ObservationIgnored private var lastDetectedLanguage: SpeechLanguage?
 
     init(settings: AppSettings, models: CleanupModelStore) {
         self.settings = settings
         self.models = models
     }
 
-    /// Turning cleanup on downloads and loads the model; turning it off frees its memory.
     var isEnabled: Bool {
         get { settings.cleansUpTranscripts }
         set {
             settings.cleansUpTranscripts = newValue
             if newValue {
-                models.use(models.activeModel)
+                models.use(models.activeModel.supports(style) ? models.activeModel : .recommended(for: style))
             } else {
                 models.unload()
             }
         }
     }
 
+    var style: CleanupStyle {
+        get { settings.cleanupStyle }
+        set {
+            settings.cleanupStyle = newValue
+            if isEnabled {
+                let compatible = models.activeModel.supports(newValue)
+                // The old editor cannot serve the new style. Release its large
+                // weights before loading the replacement on an 8 GB Mac.
+                if !compatible { models.unload() }
+                models.use(compatible ? models.activeModel : .recommended(for: newValue))
+            }
+        }
+    }
+
+    func readinessMessage(for preferences: DictationPreferences) -> String? {
+        guard preferences.cleanupEnabled, preferences.cleanupStyle == .polished else { return nil }
+        if models.activeModel.supports(.polished), models.loaded != nil { return nil }
+        return models.isBusy ? "Polishing model is still preparing" : "Download the polishing model in Settings"
+    }
+
     func start() {
-        if isEnabled {
+        if isEnabled, models.activeModel.supports(style) {
             models.loadActiveModelIfInstalled()
         }
     }
 
-    /// Gets the model ready for the dictation that's starting. See ``TranscriptEditor/warmUp()``.
-    func warmUp() async {
-        guard isEnabled, let editor = models.loaded else { return }
-        try? await editor.warmUp()
+    func warmUp(preferences: DictationPreferences? = nil) async {
+        let preferences = preferences ?? settings.dictationPreferences
+        guard preferences.cleanupEnabled, let editor = models.loaded else { return }
+        let language = preferences.language == .automatic ? lastDetectedLanguage ?? .automatic : preferences.language
+        try? await editor.warmUp(style: preferences.cleanupStyle, language: language)
     }
 
-    /// The cleaned-up transcript, or the original when cleanup is off.
-    func apply(to transcript: String) async -> String {
-        guard isEnabled else { return transcript }
-
-        // The rules need no model, so they apply even while it's still loading.
-        let tidied = DisfluencyFilter.clean(transcript)
-        guard let editor = models.loaded else { return tidied }
-
-        var sentences = TranscriptEditPolicy.sentences(in: tidied)
-        let passages = TranscriptEditPolicy.passagesToEdit(among: sentences)
-        guard !passages.isEmpty else { return tidied }
-
+    func apply(to transcript: String, preferences: DictationPreferences? = nil, detectedLanguage: String? = "en") async -> String {
+        let preferences = preferences ?? settings.dictationPreferences
+        guard preferences.cleanupEnabled else { return transcript }
+        let editor = models.activeModel.supports(preferences.cleanupStyle) ? models.loaded : nil
+        let editingLanguage = preferences.language == .automatic
+            ? detectedLanguage.flatMap(SpeechLanguage.init) ?? .automatic
+            : preferences.language
+        if preferences.language == .automatic { lastDetectedLanguage = editingLanguage }
         let started = ContinuousClock.now
-        // Last passage first, so replacing one doesn't shift the ones still to do.
-        for passage in passages.reversed() {
-            let original = sentences[passage].joined()
-            if let edited = await edit(original, with: editor) {
-                sentences.replaceSubrange(passage, with: [edited])
-            }
+        let text = await TranscriptProcessor.apply(
+            to: transcript, style: preferences.cleanupStyle, language: detectedLanguage
+        ) { passage in
+            guard let editor else { throw EditorError.cacheCannotRewind }
+            return try await editor.edit(passage, style: preferences.cleanupStyle, language: editingLanguage)
         }
         Logger.cleanup.info("Cleaned up transcript in \(ContinuousClock.now - started, privacy: .public)")
-        return sentences.joined()
-    }
-
-    /// The model's edit of `passage`, or `nil` if it failed or can't be trusted.
-    private func edit(_ passage: String, with editor: TranscriptEditor) async -> String? {
-        // The model sees the text without the whitespace that joins it to the next sentence.
-        let text = passage.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trailingWhitespace = passage.suffix(while: \.isWhitespace)
-
-        do {
-            let edited = try await editor.edit(text)
-            guard TranscriptEditPolicy.isFaithful(edited, to: text) else {
-                Logger.cleanup.info("Kept a passage as spoken: the edit changed too much")
-                return nil
-            }
-            return edited + trailingWhitespace
-        } catch {
-            Logger.cleanup.error("Cleanup failed: \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
-    }
-}
-
-private extension String {
-    /// The longest run of characters at the end that all satisfy `predicate`.
-    func suffix(while predicate: (Character) -> Bool) -> Substring {
-        self[(lastIndex { !predicate($0) }.map(index(after:)) ?? startIndex)...]
+        return text
     }
 }
