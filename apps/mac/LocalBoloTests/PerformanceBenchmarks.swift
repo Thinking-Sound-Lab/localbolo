@@ -16,20 +16,24 @@ struct PerformanceBenchmarks {
     @Test func idleWake() async throws {
         let environment = ProcessInfo.processInfo.environment
         let directory = URL(filePath: try #require(environment["LOCALBOLO_BENCHMARK_DIRECTORY"]))
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let repetitions = max(1, min(10, Int(environment["LOCALBOLO_BENCHMARK_REPETITIONS"] ?? "4") ?? 4))
         let idle = Double(environment["LOCALBOLO_BENCHMARK_IDLE_SECONDS"] ?? "45") ?? 45
+        let label = "\(environment["LOCALBOLO_BENCHMARK_LABEL"] ?? "run")-idle-\(Int(idle))s"
         var records: [Record] = []
         defer {
-            let report = Report(label: "idle-wake", repetitions: repetitions, os: ProcessInfo.processInfo.operatingSystemVersionString,
+            let report = Report(label: label, repetitions: repetitions, os: ProcessInfo.processInfo.operatingSystemVersionString,
                                 processors: ProcessInfo.processInfo.processorCount, memoryBytes: ProcessInfo.processInfo.physicalMemory,
                                 records: records)
             if let data = try? JSONEncoder().encode(report) {
-                try? data.write(to: directory.appending(path: "idle-wake-\(Int(idle))s.json"), options: .atomic)
+                try? data.write(to: directory.appending(path: "\(label).json"), options: .atomic)
             }
         }
         let defaults = try #require(UserDefaults(suiteName: "LocalBolo.Benchmark.\(UUID())"))
         let speech = SpeechModelStore(defaults: defaults)
         let cleanup = CleanupModelStore(defaults: defaults)
+        try #require(speech.isInstalled(.whisperLargeV3Turbo), "Install Whisper Turbo in Settings before benchmarking.")
+        try #require(cleanup.isInstalled(.qwen3_1_7B), "Install the Polished model in Settings before benchmarking.")
         await speech.activate(.whisperLargeV3Turbo)
         await cleanup.activate(.qwen3_1_7B)
         let transcriber = try #require(speech.transcriber)
@@ -75,6 +79,7 @@ struct PerformanceBenchmarks {
     @Test func whisperStages() async throws {
         let environment = ProcessInfo.processInfo.environment
         let directory = URL(filePath: try #require(environment["LOCALBOLO_BENCHMARK_DIRECTORY"]))
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let repetitions = 6
         let model = SpeechModel.whisperLargeV3Turbo
         let base = ModelStorage.directory.appending(path: "Whisper", directoryHint: .isDirectory)

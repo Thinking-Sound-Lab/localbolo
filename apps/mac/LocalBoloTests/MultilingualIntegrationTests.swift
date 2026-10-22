@@ -102,6 +102,20 @@ struct MultilingualIntegrationTests {
         #expect(mixed.hasSuffix("agenda."))
         #expect(!mixed.contains("。"))
 
+        // Whether or not the model applies a spoken correction, the final version is never lost.
+        let corrections: [(SpeechLanguage, String, String)] = [
+            (.chinese, "明天9点见，不对，10点见", "10点"),
+            (.hindi, "कल 5 बजे, नहीं, 6 बजे मिलते हैं", "6 बजे"),
+            (.japanese, "明日は9時、いや、10時に行きます", "10時"),
+        ]
+        for (language, spoken, final) in corrections {
+            let result = await TranscriptProcessor.apply(to: spoken, style: .polished, language: language.rawValue) {
+                try await editor.edit($0, style: .polished, language: language)
+            }
+            print("Polished correction \(language.rawValue): \(result)")
+            #expect(result.contains(final))
+        }
+
         // Warm prompt state must not mix styles, languages or prior dictations.
         let original = "The invoice is 250 dollars and we cannot approve it."
         let unchanged = try await editor.edit(original, style: .polished, language: .english)

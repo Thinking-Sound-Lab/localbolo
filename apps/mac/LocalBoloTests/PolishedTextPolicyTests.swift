@@ -38,6 +38,9 @@ struct PolishedTextPolicyTests {
         ("Call Priya tomorrow.", "", "en"),
         ("Read the report and send the invoice to the office tomorrow.", "Read the report.", "en"),
         ("Use https://example.com", "Use https://other.example.com.", "en"),
+        // Same words, so a word-level correction check alone would pass these.
+        ("Visit https://example.com/a-b.", "Visit https://example.com/a/b.", "en"),
+        ("Wire 1,000 dollars.", "Wire 1.000 dollars.", "en"),
     ])
     func rejectsObviousContentChanges(original: String, edited: String, language: String) {
         #expect(!PolishedTextPolicy.accepts(edited, original: original, language: language))
@@ -45,5 +48,32 @@ struct PolishedTextPolicyTests {
 
     @Test func keepsExplicitEnglishCorrections() {
         #expect(PolishedTextPolicy.accepts("Meet at 10 p.m.", original: "Meet at 9 p.m., sorry, at 10 p.m.", language: "en"))
+    }
+
+    @Test(arguments: [
+        ("明天9点见，不对，10点见。", "明天10点见。", "zh"),
+        ("今天，不对，明天开会", "明天开会。", "zh"),
+        ("明日は9時、いや、10時に行きます", "明日は10時に行きます。", "ja"),
+        ("कल 5 बजे, नहीं, 6 बजे मिलते हैं", "कल 6 बजे मिलते हैं।", "hi"),
+        ("Pay $20 for lunch and $250, sorry, $300 for rent.", "Pay $20 for lunch and $300 for rent.", "en"),
+        ("she have meeting at 9, sorry, at 10", "She has a meeting at 10.", "en"),
+    ])
+    func appliesSpokenCorrections(original: String, edited: String, language: String) {
+        #expect(PolishedTextPolicy.accepts(edited, original: original, language: language))
+    }
+
+    @Test(arguments: [
+        // Keeps what the speaker took back instead of the correction.
+        ("明天9点见，不对，10点见。", "明天9点见。", "zh"),
+        ("今天，不对，明天开会", "今天开会。", "zh"),
+        ("我去，不对，我不去", "我去。", "zh"),
+        ("कल 5 बजे, नहीं, 6 बजे मिलते हैं", "कल 5 बजे मिलते हैं।", "hi"),
+        ("Pay $250, sorry, $300 for rent.", "Pay $250 for rent.", "en"),
+        // Drops a fact with no correction to explain it.
+        ("明天9点和10点见", "明天10点见。", "zh"),
+        ("Pay $20 for lunch and $300 for rent.", "Pay $300 for rent.", "en"),
+    ])
+    func rejectsCorrectionsThatLoseTheFinalVersion(original: String, edited: String, language: String) {
+        #expect(!PolishedTextPolicy.accepts(edited, original: original, language: language))
     }
 }

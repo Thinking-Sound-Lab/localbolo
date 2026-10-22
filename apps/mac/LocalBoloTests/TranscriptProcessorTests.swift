@@ -52,6 +52,19 @@ struct TranscriptProcessorTests {
         #expect(result == original)
     }
 
+    @Test func splitsPassagesTooLongForTheModel() async {
+        // Within the character limit, but over the editor's token limit.
+        let sentence = "मैंने कल रिपोर्ट भेज दिया"
+        let original = Array(repeating: sentence, count: 40).joined(separator: "। ")
+        #expect(original.count <= TextPassages.maximumCharacters)
+        let result = await TranscriptProcessor.apply(to: original, style: .polished, language: "hi") { passage in
+            guard passage.count <= 400 else { throw EditorError.inputTooLong }
+            return passage.replacing("भेज दिया", with: "भेज दी")
+        }
+        #expect(!result.contains("भेज दिया"))
+        #expect(result.components(separatedBy: "भेज दी").count == 41)
+    }
+
     @Test func conservativeRulesStillRunWithoutAModel() async {
         let result = await TranscriptProcessor.apply(to: "Um, the the meeting is tomorrow.", style: .conservative, language: "en") { _ in
             throw EditorError.cacheCannotRewind

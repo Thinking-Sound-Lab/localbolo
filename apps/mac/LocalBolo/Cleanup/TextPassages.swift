@@ -6,7 +6,7 @@ import NaturalLanguage
 nonisolated enum TextPassages {
     static let maximumCharacters = 1_200
 
-    static func split(_ text: String) -> [String] {
+    static func split(_ text: String, maximumCharacters: Int = maximumCharacters) -> [String] {
         guard text.count > maximumCharacters else { return [text] }
 
         let range = text.startIndex..<text.endIndex
@@ -32,15 +32,5 @@ nonisolated enum TextPassages {
         }
         if start < text.endIndex { passages.append(String(text[start...])) }
         return passages
-    }
-
-    /// Unicode-aware word boundaries, including scripts without spaces.
-    static func words(in text: String) -> [String] {
-        let tokenizer = NLTokenizer(unit: .word)
-        tokenizer.string = text
-        return tokenizer.tokens(for: text.startIndex..<text.endIndex).compactMap { range in
-            let word = String(text[range]).lowercased()
-            return word.contains(where: { $0.isLetter || $0.isNumber }) ? word : nil
-        }
     }
 }

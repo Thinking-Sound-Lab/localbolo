@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Routing and validation are independent of GPU inference so the actual
 /// dictation pipeline can be checked without downloading a model.
@@ -19,8 +20,15 @@ nonisolated enum TranscriptProcessor {
             for passage in TranscriptEditPolicy.passagesToEdit(among: sentences).reversed() {
                 let original = sentences[passage].joined()
                 let content = original.trimmingCharacters(in: .whitespacesAndNewlines)
-                if let edited = try? await edit(content), TranscriptEditPolicy.isFaithful(edited, to: content) {
+                do {
+                    let edited = try await edit(content)
+                    guard TranscriptEditPolicy.isFaithful(edited, to: content) else {
+                        Logger.cleanup.info("Kept a passage as spoken: the edit changed too much")
+                        continue
+                    }
                     sentences.replaceSubrange(passage, with: [edited + trailingWhitespace(original)])
+                } catch {
+                    Logger.cleanup.error("Cleanup failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
             return sentences.joined()
@@ -28,15 +36,41 @@ nonisolated enum TranscriptProcessor {
         case .polished:
             var output = ""
             for passage in TextPassages.split(transcript) {
-                let content = passage.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !content.isEmpty else { output += passage; continue }
-                if let edited = try? await edit(content), PolishedTextPolicy.accepts(edited, original: content, language: language) {
-                    output += edited.trimmingCharacters(in: .whitespacesAndNewlines) + trailingWhitespace(passage)
-                } else {
-                    output += passage
-                }
+                output += await polish(passage, language: language, edit: edit)
             }
             return output
+        }
+    }
+
+    /// Polishes one passage, or keeps it as spoken.
+    ///
+    /// Passages are bounded in characters, but the model's limit is in tokens,
+    /// and Hindi or Japanese can use several per character. A passage over it
+    /// is split in two and each half tried on its own.
+    private static func polish(
+        _ passage: String,
+        language: String?,
+        edit: @Sendable (String) async throws -> String
+    ) async -> String {
+        let content = passage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty else { return passage }
+        do {
+            let edited = try await edit(content)
+            guard PolishedTextPolicy.accepts(edited, original: content, language: language) else {
+                Logger.cleanup.info("Kept a passage as spoken: the edit failed validation")
+                return passage
+            }
+            return edited.trimmingCharacters(in: .whitespacesAndNewlines) + trailingWhitespace(passage)
+        } catch EditorError.inputTooLong where passage.count >= 100 {
+            let halves = TextPassages.split(passage, maximumCharacters: passage.count / 2)
+            var output = ""
+            for half in halves {
+                output += await polish(half, language: language, edit: edit)
+            }
+            return output
+        } catch {
+            Logger.cleanup.error("Cleanup failed: \(error.localizedDescription, privacy: .public)")
+            return passage
         }
     }
 

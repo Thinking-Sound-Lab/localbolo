@@ -20,6 +20,10 @@ final class AppModel {
             settings.speechLanguage = newValue
             if !speechModels.activeModel.supports(newValue), speechModels.isInstalled(.whisperLargeV3Turbo) {
                 speechModels.use(.whisperLargeV3Turbo)
+            } else if speechModels.activeModel.supports(newValue) {
+                // `start()` skips a model that doesn't fit the saved language,
+                // so switching back to one it supports must still load it.
+                speechModels.loadActiveModelIfInstalled()
             }
         }
     }
